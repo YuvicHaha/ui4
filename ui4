@@ -767,23 +767,25 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleEnabled = not ToggleEnabled
         end
         
-        -- 1. FORCE UPDATE OUR FLAT GLOBAL REGISTER HERE IN REAL TIME
-        if not _G.MyUI_SavedSettings then
-            _G.MyUI_SavedSettings = {}
+        -- 1. FORCE INITIALIZE THE GLOBAL TABLE POOL IF MISSING
+        if not _G.UI_States then
+            _G.UI_States = { Toggles = {}, Sliders = {}, TextBoxes = {}, Dropdowns = {} }
         end
-        if togglename and togglename ~= "" then
-            _G.MyUI_SavedSettings[togglename] = ToggleEnabled
+        if not _G.UI_States.Toggles then
+            _G.UI_States.Toggles = {}
         end
 
-        -- 2. Keep your original legacy tracking logic intact just in case
-        if UI_States and UI_States.Toggles then
-            UI_States.Toggles[togglename] = ToggleEnabled
-        end
-        if _G.UI_States and _G.UI_States.Toggles then
+        -- 2. DIRECTLY POPULATE THE SYSTEM POOL USING THE NAME AS A STRING KEY
+        if togglename and togglename ~= "" then
             _G.UI_States.Toggles[togglename] = ToggleEnabled
         end
 
-        -- 3. Visual elements and animations
+        -- 3. Legacy safety back-up assignment
+        if UI_States and UI_States.Toggles then
+            UI_States.Toggles[togglename] = ToggleEnabled
+        end
+
+        -- 4. Visual elements and animations
         local targetX = ToggleEnabled and 0.455 or 0.123
         ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
         
@@ -1033,10 +1035,10 @@ end
         moveconnection = mouse.Move:Connect(function()
     SliderNumber.Text = tostring(Value)
     Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-    
-    -- [TRACKING LOGIC]: Save while dragging
-    if not _G.UI_States.Sliders then _G.UI_States.Sliders = {} end
-_G.UI_States.Sliders[slidername] = Value
+    if slidername and slidername ~= "" then
+        if not _G.UI_States.Sliders then _G.UI_States.Sliders = {} end
+        _G.UI_States.Sliders[slidername] = tonumber(SliderNumber.Text) or min
+    end
 
     callback(SliderNumber.Text)
     SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
@@ -1129,8 +1131,10 @@ end
             
             TextBox.FocusLost:Connect(function()
     TextBoxHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
-    if not _G.UI_States.TextBoxes then _G.UI_States.TextBoxes = {} end
-    _G.UI_States.TextBoxes[textboxname] = TextBox.Text
+    if textboxname and textboxname ~= "" then
+        if not _G.UI_States.TextBoxes then _G.UI_States.TextBoxes = {} end
+        _G.UI_States.TextBoxes[textboxname] = textboxdefault or "nil"
+    end
     callback(TextBox.Text)
 end)
             --
@@ -1322,8 +1326,10 @@ end)
     DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
     
     -- Change this part right here:
-    if not _G.UI_States.Dropdowns then _G.UI_States.Dropdowns = {} end
-    _G.UI_States.Dropdowns[dropdownname] = v
+    if dropdownname and dropdownname ~= "" then
+        if not _G.UI_States.Dropdowns then _G.UI_States.Dropdowns = {} end
+        _G.UI_States.Dropdowns[dropdownname] = list[1] or "None"
+    end
     
     callback(v)
     wait(0.3)
