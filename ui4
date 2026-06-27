@@ -1410,7 +1410,6 @@ function Library:GetConfigs()
         local files = listfiles(folderPath)
         for _, filePath in pairs(files) do
             if filePath:sub(-5):lower() == ".json" then
-                -- Cleans up the full file path into just the plain text name
                 local fileName = filePath:gsub(folderPath .. "/", ""):gsub(".json", "")
                 table.insert(configs, fileName)
             end
