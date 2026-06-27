@@ -920,15 +920,24 @@ function Library:CreateWindow(windowname,windowinfo)
     -- ========================================================
     -- HOOK AUTOMATION LOGIC (Appended directly at the bottom)
     -- ========================================================
+    if not _G.MyUI_SavedSettings then
+        _G.MyUI_SavedSettings = {}
+    end
     if not _G.UI_Elements then 
         _G.UI_Elements = { Toggles = {} } 
     end
 
+    -- 1. Pre-register the toggle's state immediately when the script runs
+    if togglename and togglename ~= "" then
+        _G.MyUI_SavedSettings[togglename] = ToggleEnabled
+    end
+
+    -- 2. Save the remote-control capability for the Load button
     _G.UI_Elements.Toggles[togglename] = function(state)
         if ToggleEnabled ~= state then
-            FireToggle(false) -- This forces the visual button layout to simulate a real click
+            FireToggle(false)
         end
-    end
+    end 
 end
         function PageElements:addSlider(slidername,minvalue,maxvalue,callback)
     local SliderHolder = Instance.new("Frame")
