@@ -778,8 +778,12 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleEnabled = not ToggleEnabled
         end
         
-        -- Add this line to pass the active screen state straight to your config data:
-        Library.Flags[togglename] = ToggleEnabled
+        -- EXPLICIT SYSTEM PATCH: Save directly into the global configuration storage table
+        if _G.SkidoFlags then
+            _G.SkidoFlags[togglename] = ToggleEnabled
+        else
+            Library.Flags[togglename] = ToggleEnabled
+        end
         
         local targetX = ToggleEnabled and 0.455 or 0.123
         ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
