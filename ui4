@@ -10,10 +10,6 @@ DestroyYep()
 wait(0.069)
 
 local Library = {}
-Library.Flags = {}    -- Stores active states (e.g., {["Aimbot"] = true})
-Library.Elements = {} -- Stores visual update methods
-
-local HttpService = game:GetService("HttpService")
 
 function Library:CreateWindow(windowname,windowinfo)
     local fu8rj82n = Instance.new("ScreenGui")
@@ -776,7 +772,6 @@ function Library:CreateWindow(windowname,windowinfo)
         if not skipCallback then
             ToggleEnabled = not ToggleEnabled
         end
-        Library.Flags[togglename] = ToggleEnabled
         
         local targetX = ToggleEnabled and 0.455 or 0.123
         ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
@@ -916,15 +911,6 @@ function Library:CreateWindow(windowname,windowinfo)
     end
 
     FireToggle(true)
-    Library.Flags[togglename] = ToggleEnabled
-
-    Library.Elements[togglename] = {
-        Set = function(bool)
-            if ToggleEnabled ~= bool then
-                FireToggle(false)
-            end
-        end
-    }
 end
         function PageElements:addSlider(slidername,minvalue,maxvalue,callback)
     local SliderHolder = Instance.new("Frame")
@@ -1021,7 +1007,6 @@ end
         moveconnection = mouse.Move:Connect(function()
             SliderNumber.Text = tostring(Value)
             Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-            Library.Flags[slidername] = Value -- Update config flag
             callback(SliderNumber.Text)
             SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
             SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
@@ -1030,7 +1015,6 @@ end
         releaseconnection = uis.InputEnded:Connect(function(Mouse)
             if Mouse.UserInputType == Enum.UserInputType.MouseButton1 then
                 Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-                Library.Flags[slidername] = Value
                 callback(SliderNumber.Text)
                 SliderHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
                 SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
@@ -1054,7 +1038,6 @@ end
         
         -- Update input visually inside the text boundary box
         SliderNumber.Text = tostring(inputVal)
-        Library.Flags[slidername] = inputVal
         
         -- Map values directly back to absolute pixels (0 to 273px bar scale)
         local percentage = (inputVal - min) / (max - min)
@@ -1065,21 +1048,6 @@ end
         -- Fire output callback immediately
         callback(SliderNumber.Text)
     end)
-    Library.Flags[slidername] = min
-
-    Library.Elements[slidername] = {
-        Set = function(value)
-            local inputVal = math.clamp(tonumber(value) or min, min, max)
-            SliderNumber.Text = tostring(inputVal)
-            
-            local percentage = (inputVal - min) / (max - min)
-            if max == min then percentage = 0 end
-            
-            SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
-            Library.Flags[slidername] = inputVal
-            pcall(callback, tostring(inputVal))
-        end
-    }
 end
 
         function PageElements:addTextBox(textboxname,textboxdefault,callback)
@@ -1138,15 +1106,7 @@ end
                 TextBoxHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
                 callback(TextBox.Text)
             end)
-            Library.Flags[textboxname] = textboxdefault or ""
-
-            Library.Elements[textboxname] = {
-                Set = function(value)
-                    TextBox.Text = tostring(value)
-                    Library.Flags[textboxname] = tostring(value)
-                    pcall(callback, tostring(value))
-                end
-            }
+            --
         end
 
         function PageElements:addDropdown(dropdownname,list,scrollsize,callback)
@@ -1325,10 +1285,7 @@ end
                     wait(0.2)
                     DropdownOptionContainer.Visible = false
                     DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
-                    
-                    Library.Flags[dropdownname] = v -- Update config flag
                     callback(v)
-                    
                     wait(0.3)
                     makeelements(true)
                     DropdownContainer.Visible = false
@@ -1336,92 +1293,10 @@ end
                     DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
                 end) -- droplist ended
             end
-            Library.Flags[dropdownname] = ""
-
-            Library.Elements[dropdownname] = {
-                Set = function(value)
-                    -- Updates color highlight across choices if matching element is found
-                    for _, optionBtn in pairs(DropdownOptionContainer:GetChildren()) do
-                        if optionBtn:IsA("GuiButton") then
-                            if optionBtn.Text == tostring(value) then
-                                optionBtn.TextColor3 = Color3.fromRGB(137, 246, 255)
-                            else
-                                optionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                            end
-                        end
-                    end
-                    Library.Flags[dropdownname] = tostring(value)
-                    pcall(callback, tostring(value))
-                end
-            }
         end
         --
         return PageElements
     end
     return PageYep
 end
-function Library:SaveConfig(configName)
-    configName = configName or "default_config"
-    local folderPath = "SkidoUI_Configs"
-    
-    -- Creates the directory folder if it doesn't exist
-    if makefolder then pcall(makefolder, folderPath) end
-    
-    local success, encoded = pcall(function()
-        return HttpService:JSONEncode(Library.Flags)
-    end)
-    
-    if success and writefile then
-        writefile(folderPath .. "/" .. configName .. ".json", encoded)
-        print("[Skido UI] Config successfully saved to: " .. configName)
-    end
-end
-
-function Library:LoadConfig(configName)
-    configName = configName or "default_config"
-    local filePath = "SkidoUI_Configs/" .. configName .. ".json"
-    
-    if not readfile or not isfile or not isfile(filePath) then 
-        warn("[Skido UI] Config file not found: " .. configName)
-        return 
-    end
-    
-    local content = readfile(filePath)
-    local success, decoded = pcall(function()
-        return HttpService:JSONDecode(content)
-    end)
-    
-    if success and typeof(decoded) == "table" then
-        for featureName, savedValue in pairs(decoded) do
-            if Library.Elements[featureName] and Library.Elements[featureName].Set then
-                pcall(Library.Elements[featureName].Set, savedValue)
-            end
-        end
-        print("[Skido UI] Config successfully loaded: " .. configName)
-    end
-end
-
--- Pinned right below LoadConfig and right above the return statement:
-function Library:GetConfigs()
-    local folderPath = "SkidoUI_Configs"
-    local configs = {}
-    
-    if listfiles and isfolder and isfolder(folderPath) then
-        local files = listfiles(folderPath)
-        for _, filePath in pairs(files) do
-            if filePath:sub(-5):lower() == ".json" then
-                -- Cleans up the full file path into just the plain text name
-                local fileName = filePath:gsub(folderPath .. "/", ""):gsub(".json", "")
-                table.insert(configs, fileName)
-            end
-        end
-    end
-    
-    if #configs == 0 then
-        table.insert(configs, "default_config")
-    end
-    
-    return configs
-end
-
 return Library
