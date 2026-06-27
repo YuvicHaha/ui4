@@ -774,11 +774,21 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleEnabled = not ToggleEnabled
         end
         
-        -- Safe tracking update structure
-        if _G.UI_States and _G.UI_States.Toggles then
+        -- 1. FORCE INITIALIZE IF NULL (Prevents saving to an empty array)
+        if not _G.UI_States then
+            _G.UI_States = { Toggles = {}, Sliders = {}, TextBoxes = {}, Dropdowns = {} }
+        end
+        if not _G.UI_States.Toggles then
+            _G.UI_States.Toggles = {}
+        end
+
+        -- 2. ASSIGN THE VALUE UNIQUE TO THIS TOGGLE
+        -- Using togglename as a string key ensures JSONEncode creates an object instead of an empty array
+        if togglename and togglename ~= "" then
             _G.UI_States.Toggles[togglename] = ToggleEnabled
         end
 
+        -- 3. Run your library's visual animations
         local targetX = ToggleEnabled and 0.455 or 0.123
         ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
         
