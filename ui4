@@ -1400,4 +1400,28 @@ function Library:LoadConfig(configName)
         print("[Skido UI] Config successfully loaded: " .. configName)
     end
 end
+
+-- Pinned right below LoadConfig and right above the return statement:
+function Library:GetConfigs()
+    local folderPath = "SkidoUI_Configs"
+    local configs = {}
+    
+    if listfiles and isfolder and isfolder(folderPath) then
+        local files = listfiles(folderPath)
+        for _, filePath in pairs(files) do
+            if filePath:sub(-5):lower() == ".json" then
+                -- Cleans up the full file path into just the plain text name
+                local fileName = filePath:gsub(folderPath .. "/", ""):gsub(".json", "")
+                table.insert(configs, fileName)
+            end
+        end
+    end
+    
+    if #configs == 0 then
+        table.insert(configs, "default_config")
+    end
+    
+    return configs
+end
+
 return Library
