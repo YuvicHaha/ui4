@@ -10,9 +10,8 @@ DestroyYep()
 wait(0.069)
 
 local Library = {}
-Library.Flags = {}    -- CRITICAL: Holds the values that get saved to your workspace
-Library.Elements = {} -- CRITICAL: Holds the functions that load the values back
-
+Library.Flags = {}    -- Stores active states (e.g., {["Aimbot"] = true})
+Library.Elements = {} -- Stores visual update methods
 
 local HttpService = game:GetService("HttpService")
 
@@ -777,13 +776,7 @@ function Library:CreateWindow(windowname,windowinfo)
         if not skipCallback then
             ToggleEnabled = not ToggleEnabled
         end
-        
-        -- EXPLICIT SYSTEM PATCH: Save directly into the global configuration storage table
-        if _G.SkidoFlags then
-            _G.SkidoFlags[togglename] = ToggleEnabled
-        else
-            Library.Flags[togglename] = ToggleEnabled
-        end
+        Library.Flags[togglename] = ToggleEnabled
         
         local targetX = ToggleEnabled and 0.455 or 0.123
         ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
@@ -1382,7 +1375,7 @@ function Library:SaveConfig(configName)
         writefile(folderPath .. "/" .. configName .. ".json", encoded)
         print("[Skido UI] Config successfully saved to: " .. configName)
     end
-end -- <--- Fixed and separated!
+end
 
 function Library:LoadConfig(configName)
     configName = configName or "default_config"
@@ -1406,8 +1399,9 @@ function Library:LoadConfig(configName)
         end
         print("[Skido UI] Config successfully loaded: " .. configName)
     end
-end -- <--- Fixed and separated!
+end
 
+-- Pinned right below LoadConfig and right above the return statement:
 function Library:GetConfigs()
     local folderPath = "SkidoUI_Configs"
     local configs = {}
@@ -1416,7 +1410,7 @@ function Library:GetConfigs()
         local files = listfiles(folderPath)
         for _, filePath in pairs(files) do
             if filePath:sub(-5):lower() == ".json" then
-                -- Cleans up file path into just the plain text name
+                -- Cleans up the full file path into just the plain text name
                 local fileName = filePath:gsub(folderPath .. "/", ""):gsub(".json", "")
                 table.insert(configs, fileName)
             end
