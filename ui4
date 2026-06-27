@@ -769,20 +769,23 @@ function Library:CreateWindow(windowname,windowinfo)
     end
 
     local function FireToggle(skipCallback)
-        if not skipCallback then
-            ToggleEnabled = not ToggleEnabled
-        end
-        
-        local targetX = ToggleEnabled and 0.455 or 0.123
-        ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
-        
-        if not ToggleEnabled and closeColorPanel then
-            closeColorPanel()
-        end
-        
-        UpdateScreenButtonVisuals()
-        pcall(callback, ToggleEnabled)
+    if not skipCallback then
+        ToggleEnabled = not ToggleEnabled
     end
+    
+    -- [TRACKING LOGIC]: Save the state using the toggle's name
+    UI_States.Toggles[togglename] = ToggleEnabled
+
+    local targetX = ToggleEnabled and 0.455 or 0.123
+    ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
+    
+    if not ToggleEnabled and closeColorPanel then
+        closeColorPanel()
+    end
+    
+    UpdateScreenButtonVisuals()
+    pcall(callback, ToggleEnabled)
+end
 
     ToggleButton.MouseButton1Down:Connect(function() FireToggle(false) end)
 
@@ -1005,12 +1008,16 @@ end
         SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
         
         moveconnection = mouse.Move:Connect(function()
-            SliderNumber.Text = tostring(Value)
-            Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-            callback(SliderNumber.Text)
-            SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
-            SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
-        end)
+    SliderNumber.Text = tostring(Value)
+    Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
+    
+    -- [TRACKING LOGIC]: Save while dragging
+    UI_States.Sliders[slidername] = Value
+
+    callback(SliderNumber.Text)
+    SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
+    SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
+end)
         
         releaseconnection = uis.InputEnded:Connect(function(Mouse)
             if Mouse.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -1026,28 +1033,22 @@ end
 
     -- NEW: Handle Manual Text Input Custom Entry Logic
     SliderNumber.FocusLost:Connect(function(enterPressed)
-        local inputVal = tonumber(SliderNumber.Text)
-        
-        -- If input is empty or contains non-numeric strings, revert back to the bar's current location value
-        if not inputVal then
-            inputVal = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-        end
-        
-        -- Automatically lock boundaries between min and max parameters
-        inputVal = math.clamp(inputVal, min, max)
-        
-        -- Update input visually inside the text boundary box
-        SliderNumber.Text = tostring(inputVal)
-        
-        -- Map values directly back to absolute pixels (0 to 273px bar scale)
-        local percentage = (inputVal - min) / (max - min)
-        if max == min then percentage = 0 end -- Division-by-zero protection fallback
-        
-        SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
-        
-        -- Fire output callback immediately
-        callback(SliderNumber.Text)
-    end)
+    local inputVal = tonumber(SliderNumber.Text)
+    if not inputVal then
+        inputVal = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
+    end
+    inputVal = math.clamp(inputVal, min, max)
+    
+    -- [TRACKING LOGIC]: Save manual typing
+    UI_States.Sliders[slidername] = inputVal
+
+    SliderNumber.Text = tostring(inputVal)
+    local percentage = (inputVal - min) / (max - min)
+    if max == min then percentage = 0 end 
+    
+    SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
+    callback(SliderNumber.Text)
+end)
 end
 
         function PageElements:addTextBox(textboxname,textboxdefault,callback)
@@ -1104,6 +1105,7 @@ end
             
             TextBox.FocusLost:Connect(function()
                 TextBoxHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
+                UI_States.TextBoxes[textboxname] = TextBox.Text
                 callback(TextBox.Text)
             end)
             --
@@ -1239,63 +1241,90 @@ end
                     DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
                     DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
                 end
-            end)	
+            end)    
 
-            for i,v in pairs(list) do  
-                local Option = Instance.new("TextButton")
-                local OptionCorner = Instance.new("UICorner")
-
-                Option.Name = "Option"
-                Option.Parent = DropdownOptionContainer
-                Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-                Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
-                Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
-                Option.Size = UDim2.new(0, 283, 0, 22)
-                Option.AutoButtonColor = false
-                Option.Font = Enum.Font.GothamSemibold
-                Option.Text = v
-                Option.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Option.TextSize = 10.000
-                
-                OptionCorner.CornerRadius = UDim.new(0, 6)
-                OptionCorner.Name = "OptionCorner"
-                OptionCorner.Parent = Option
-
-                Option.MouseEnter:Connect(function()
-                    Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
-                end)
-                
-                Option.MouseLeave:Connect(function()
-                    Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
-                end)
-                
-                Option.MouseButton1Down:Connect(function()
-                    for i,v in pairs(Option.Parent:GetChildren()) do
-                        if v:IsA("GuiButton") and v ~= Option then
-                            v.TextColor3 = Color3.fromRGB(255,255,255)
-                        end
+            -- Refresh Core Logic
+            local function populateList(newList)
+                for _, child in ipairs(DropdownOptionContainer:GetChildren()) do
+                    if child:IsA("TextButton") and child.Name == "Option" then
+                        child:Destroy()
                     end
-                    Option.TextColor3 = Color3.fromRGB(137, 246, 255)
-                end)
+                end
 
-                Option.MouseButton1Down:Connect(function()
-                    DropDownEnabled = false
-                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
-                    wait(0.2)
-                    DropdownOptionContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
-                    callback(v)
-                    wait(0.3)
-                    makeelements(true)
-                    DropdownContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
-                end) -- droplist ended
+                for i,v in pairs(newList) do  
+                    local Option = Instance.new("TextButton")
+                    local OptionCorner = Instance.new("UICorner")
+
+                    Option.Name = "Option"
+                    Option.Parent = DropdownOptionContainer
+                    Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                    Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
+                    Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
+                    Option.Size = UDim2.new(0, 283, 0, 22)
+                    Option.AutoButtonColor = false
+                    Option.Font = Enum.Font.GothamSemibold
+                    Option.Text = v
+                    Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    Option.TextSize = 10.000
+                    
+                    OptionCorner.CornerRadius = UDim.new(0, 6)
+                    OptionCorner.Name = "OptionCorner"
+                    OptionCorner.Parent = Option
+
+                    Option.MouseEnter:Connect(function()
+                        Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
+                    end)
+                    
+                    Option.MouseLeave:Connect(function()
+                        Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
+                    end)
+                    
+                    Option.MouseButton1Down:Connect(function()
+                        for _, sibling in pairs(Option.Parent:GetChildren()) do
+                            if sibling:IsA("GuiButton") and sibling ~= Option then
+                                sibling.TextColor3 = Color3.fromRGB(255,255,255)
+                            end
+                        end
+                        Option.TextColor3 = Color3.fromRGB(137, 246, 255)
+                    end)
+
+                    Option.MouseButton1Down:Connect(function()
+                        DropDownEnabled = false
+                        DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                        DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                        wait(0.2)
+                        DropdownOptionContainer.Visible = false
+                        DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                        
+                        if UI_States and UI_States.Dropdowns then
+                            UI_States.Dropdowns[dropdownname] = v
+                        end
+                        
+                        callback(v)
+                        wait(0.3)
+                        makeelements(true)
+                        DropdownContainer.Visible = false
+                        DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                        DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
+                    end)
+                end
+                
+                local padding = DropdownOptionContainerLayout.Padding.Offset
+                local totalItems = #newList
+                DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, 0, (totalItems * 22) + ((totalItems - 1) * padding))
             end
+
+            populateList(list)
+
+            local DropdownControls = {}
+            function DropdownControls:Refresh(updateList)
+                populateList(updateList)
+            end
+            
+            return DropdownControls
         end
-        --
-        return PageElements
+-- Keep your original trailing end-blocks clean exactly as they were:
+    return PageElements
     end
     return PageYep
 end
