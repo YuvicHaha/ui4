@@ -1367,18 +1367,52 @@ function Library:SaveConfig(configName)
     configName = configName or "default_config"
     local folderPath = "SkidoUI_Configs"
     
-    if makefolder then pcall(makefolder, folderPath) end
+    print("[Skido Debug] Attempting to save config: " .. configName)
     
+    -- 1. Check folder creation
+    if makefolder then
+        local folderSuccess, folderError = pcall(function()
+            makefolder(folderPath)
+        end)
+        if not folderSuccess then
+            warn("[Skido Debug] makefolder failed: " .. tostring(folderError))
+        else
+            print("[Skido Debug] Folder created or already exists.")
+        end
+    else
+        warn("[Skido Debug] Your executor DOES NOT support 'makefolder'!")
+    end
+    
+    -- 2. Encode Flags data
     local success, encoded = pcall(function()
-        -- Directly encoding our global flag registry
         return HttpService:JSONEncode(_G.SkidoFlags)
     end)
     
-    if success and writefile then
-        writefile(folderPath .. "/" .. configName .. ".json", encoded)
-        print("[Skido UI] Saved config file directly to workspace: " .. configName)
+    if not success then
+        warn("[Skido Debug] JSON Encoding failed. Flags table contains bad data.")
+        return
+    end
+    print("[Skido Debug] Data encoded successfully: " .. tostring(encoded))
+    
+    -- 3. Write File check
+    if writefile then
+        local fileSuccess, fileError = pcall(function()
+            writefile(folderPath .. "/" .. configName .. ".json", encoded)
+        end)
+        if fileSuccess then
+            print("[Skido UI] SUCCESS! Config saved to: workspace/" .. folderPath .. "/" .. configName .. ".json")
+        else
+            warn("[Skido Debug] writefile failed: " .. tostring(fileError))
+            
+            -- Emergency Path Bypass: Try writing directly to workspace without a subfolder
+            print("[Skido Debug] Attempting emergency root workspace save...")
+            pcall(function()
+                writefile(configName .. ".json", encoded)
+                print("[Skido UI] EMERGENCY SUCCESS! Saved directly to root workspace as " .. configName .. ".json")
+            end)
+        end
     else
-        warn("[Skido UI] Save failed. Check if your executor supports writefile.")
+        warn("[Skido Debug] Your executor DOES NOT support 'writefile'!")
     end
 end
 
