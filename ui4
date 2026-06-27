@@ -1367,61 +1367,25 @@ function Library:SaveConfig(configName)
     configName = configName or "default_config"
     local folderPath = "SkidoUI_Configs"
     
-    print("[Skido Debug] Attempting to save config: " .. configName)
+    -- Creates the directory folder if it doesn't exist
+    if makefolder then pcall(makefolder, folderPath) end
     
-    -- 1. Check folder creation
-    if makefolder then
-        local folderSuccess, folderError = pcall(function()
-            makefolder(folderPath)
-        end)
-        if not folderSuccess then
-            warn("[Skido Debug] makefolder failed: " .. tostring(folderError))
-        else
-            print("[Skido Debug] Folder created or already exists.")
-        end
-    else
-        warn("[Skido Debug] Your executor DOES NOT support 'makefolder'!")
-    end
-    
-    -- 2. Encode Flags data
     local success, encoded = pcall(function()
-        return HttpService:JSONEncode(_G.SkidoFlags)
+        return HttpService:JSONEncode(Library.Flags)
     end)
     
-    if not success then
-        warn("[Skido Debug] JSON Encoding failed. Flags table contains bad data.")
-        return
+    if success and writefile then
+        writefile(folderPath .. "/" .. configName .. ".json", encoded)
+        print("[Skido UI] Config successfully saved to: " .. configName)
     end
-    print("[Skido Debug] Data encoded successfully: " .. tostring(encoded))
-    
-    -- 3. Write File check
-    if writefile then
-        local fileSuccess, fileError = pcall(function()
-            writefile(folderPath .. "/" .. configName .. ".json", encoded)
-        end)
-        if fileSuccess then
-            print("[Skido UI] SUCCESS! Config saved to: workspace/" .. folderPath .. "/" .. configName .. ".json")
-        else
-            warn("[Skido Debug] writefile failed: " .. tostring(fileError))
-            
-            -- Emergency Path Bypass: Try writing directly to workspace without a subfolder
-            print("[Skido Debug] Attempting emergency root workspace save...")
-            pcall(function()
-                writefile(configName .. ".json", encoded)
-                print("[Skido UI] EMERGENCY SUCCESS! Saved directly to root workspace as " .. configName .. ".json")
-            end)
-        end
-    else
-        warn("[Skido Debug] Your executor DOES NOT support 'writefile'!")
-    end
-end
+end -- <--- Fixed and separated!
 
 function Library:LoadConfig(configName)
     configName = configName or "default_config"
     local filePath = "SkidoUI_Configs/" .. configName .. ".json"
     
     if not readfile or not isfile or not isfile(filePath) then 
-        warn("[Skido UI] File not found: " .. configName)
+        warn("[Skido UI] Config file not found: " .. configName)
         return 
     end
     
@@ -1432,13 +1396,13 @@ function Library:LoadConfig(configName)
     
     if success and typeof(decoded) == "table" then
         for featureName, savedValue in pairs(decoded) do
-            if _G.SkidoElements[featureName] and _G.SkidoElements[featureName].Set then
-                pcall(_G.SkidoElements[featureName].Set, savedValue)
+            if Library.Elements[featureName] and Library.Elements[featureName].Set then
+                pcall(Library.Elements[featureName].Set, savedValue)
             end
         end
-        print("[Skido UI] Successfully loaded configurations.")
+        print("[Skido UI] Config successfully loaded: " .. configName)
     end
-end
+end -- <--- Fixed and separated!
 
 function Library:GetConfigs()
     local folderPath = "SkidoUI_Configs"
@@ -1448,6 +1412,7 @@ function Library:GetConfigs()
         local files = listfiles(folderPath)
         for _, filePath in pairs(files) do
             if filePath:sub(-5):lower() == ".json" then
+                -- Cleans up file path into just the plain text name
                 local fileName = filePath:gsub(folderPath .. "/", ""):gsub(".json", "")
                 table.insert(configs, fileName)
             end
