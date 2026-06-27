@@ -11,6 +11,12 @@ wait(0.069)
 
 local Library = {}
 
+local UI_States = {
+    Toggles = {},
+    Sliders = {},
+    TextBoxes = {}
+    Dropdowns = {}
+}
 function Library:CreateWindow(windowname,windowinfo)
     local fu8rj82n = Instance.new("ScreenGui")
     local Frame = Instance.new("Frame")
