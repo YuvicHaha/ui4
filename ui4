@@ -1042,7 +1042,8 @@ end
     Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
     
     -- [TRACKING LOGIC]: Save while dragging
-    UI_States.Sliders[slidername] = Value
+    if not _G.MyUI_SavedSettings then _G.MyUI_SavedSettings = {} end
+_G.MyUI_SavedSettings[slidername] = Value
 
     callback(SliderNumber.Text)
     SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
@@ -1135,7 +1136,8 @@ end
             
             TextBox.FocusLost:Connect(function()
                 TextBoxHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
-                UI_States.TextBoxes[textboxname] = TextBox.Text
+                if not _G.MyUI_SavedSettings then _G.MyUI_SavedSettings = {} end
+_G.MyUI_SavedSettings[textboxname] = TextBox.Text
                 callback(TextBox.Text)
             end)
             --
@@ -1326,9 +1328,8 @@ end
                         DropdownOptionContainer.Visible = false
                         DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
                         
-                        if UI_States and UI_States.Dropdowns then
-                            UI_States.Dropdowns[dropdownname] = v
-                        end
+                        if not _G.MyUI_SavedSettings then _G.MyUI_SavedSettings = {} end
+_G.MyUI_SavedSettings[dropdownname] = v
                         
                         callback(v)
                         wait(0.3)
