@@ -10,8 +10,9 @@ DestroyYep()
 wait(0.069)
 
 local Library = {}
-Library.Flags = {}    -- Stores active states (e.g., {["Aimbot"] = true})
-Library.Elements = {} -- Stores visual update methods
+Library.Flags = {}    -- CRITICAL: Holds the values that get saved to your workspace
+Library.Elements = {} -- CRITICAL: Holds the functions that load the values back
+
 
 local HttpService = game:GetService("HttpService")
 
@@ -776,6 +777,8 @@ function Library:CreateWindow(windowname,windowinfo)
         if not skipCallback then
             ToggleEnabled = not ToggleEnabled
         end
+        
+        -- Add this line to pass the active screen state straight to your config data:
         Library.Flags[togglename] = ToggleEnabled
         
         local targetX = ToggleEnabled and 0.455 or 0.123
