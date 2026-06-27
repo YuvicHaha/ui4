@@ -515,8 +515,6 @@ function Library:CreateWindow(windowname,windowinfo)
     local hasKeybind = false -- Tracks if a keybind slot was explicitly requested
 
     if typeof(arg2) == "EnumItem" then
-        -- Syntax style: Main:addToggle("Name", Enum.KeyCode.V, callback, defaultState)
-        -- OR Main:addToggle("Name", Enum.UserInputType.MouseButton2, callback, defaultState)
         keybind = arg2
         hasKeybind = true
         callback = arg3 or function() end
@@ -534,14 +532,12 @@ function Library:CreateWindow(windowname,windowinfo)
     else
         keybind = nil
         if typeof(arg2) == "boolean" then
-            -- Syntax style: Visual:addToggle("Name", defaultState, callback, hasPicker, ...)
             defaultState = arg2
             callback = arg3 or function() end
             hasColorPicker = arg4 or false
             defaultColor = arg5
             colorCallback = arg6
         else
-            -- Syntax style: Main:addToggle("Name", callback, hasPicker, ...)
             defaultState = false
             callback = arg2 or function() end
             hasColorPicker = arg3 or false
@@ -559,7 +555,6 @@ function Library:CreateWindow(windowname,windowinfo)
     -- Initialize state
     local ToggleEnabled = defaultState
     local isListening = false
-    -- FIX: If it's Unknown, set currentBind to nil so it textually renders as "None"
     local currentBind = (keybind ~= Enum.KeyCode.Unknown) and keybind or nil 
     local UserInputService = game:GetService("UserInputService")
     
@@ -569,7 +564,7 @@ function Library:CreateWindow(windowname,windowinfo)
     local closeColorPanel = nil
 
     ToggleHolder.Name = "ToggleHolder"
-    ToggleHolder.Parent = Home -- Ensure 'Home' is defined higher up in your main library script!
+    ToggleHolder.Parent = Home 
     ToggleHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
     ToggleHolder.BorderSizePixel = 0
     ToggleHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
@@ -607,7 +602,6 @@ function Library:CreateWindow(windowname,windowinfo)
         end
         shared.SkidoMobileOffsetCount = shared.SkidoMobileOffsetCount or 0
     else
-        -- Initializing the Keybind Text (Handles Mouse vs Keyboard formatting)
         if currentBind then
             if currentBind.EnumType == Enum.UserInputType then
                 BindButton.Text = string.gsub(currentBind.Name, "MouseButton", "MB")
@@ -781,23 +775,25 @@ function Library:CreateWindow(windowname,windowinfo)
     end
 
     local function FireToggle(skipCallback)
-    if not skipCallback then
-        ToggleEnabled = not ToggleEnabled
-    end
-    
-    -- [TRACKING LOGIC]: Save the state using the toggle's name
-    UI_States.Toggles[togglename] = ToggleEnabled
+        if not skipCallback then
+            ToggleEnabled = not ToggleEnabled
+        end
+        
+        -- Safe tracking update structure
+        if _G.UI_States and _G.UI_States.Toggles then
+            _G.UI_States.Toggles[togglename] = ToggleEnabled
+        end
 
-    local targetX = ToggleEnabled and 0.455 or 0.123
-    ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
-    
-    if not ToggleEnabled and closeColorPanel then
-        closeColorPanel()
+        local targetX = ToggleEnabled and 0.455 or 0.123
+        ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
+        
+        if not ToggleEnabled and closeColorPanel then
+            closeColorPanel()
+        end
+        
+        UpdateScreenButtonVisuals()
+        pcall(callback, ToggleEnabled)
     end
-    
-    UpdateScreenButtonVisuals()
-    pcall(callback, ToggleEnabled)
-end
 
     ToggleButton.MouseButton1Down:Connect(function() FireToggle(false) end)
 
@@ -873,15 +869,12 @@ end
         BindButton.MouseButton1Down:Connect(function()
             BindButton.Text = "..."
             BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            
-            -- FIX: Wait a fraction of a second so the initial left-click isn't caught by the listener
             task.wait(0.1) 
             isListening = true
         end)
 
         UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
             if isListening then
-                -- LISTENING MODE: Determine what type of input was just pressed
                 local isKeyboard = (input.UserInputType == Enum.UserInputType.Keyboard)
                 local isMouse = (input.UserInputType == Enum.UserInputType.MouseButton1 or 
                                  input.UserInputType == Enum.UserInputType.MouseButton2 or 
@@ -897,7 +890,6 @@ end
                             BindButton.Text = currentBind.Name
                         else
                             currentBind = input.UserInputType
-                            -- Shorten names for UI: MouseButton1 -> MB1
                             BindButton.Text = string.gsub(currentBind.Name, "MouseButton", "MB")
                         end
                     end
@@ -905,14 +897,11 @@ end
                     isListening = false
                 end
             else
-                -- ACTIVE MODE: Check if the input matches our saved currentBind
                 if not gameProcessedEvent and currentBind and BindButton.Visible then
                     local isMatch = false
                     
-                    -- Check for Keyboard Match
                     if typeof(currentBind) == "EnumItem" and currentBind.EnumType == Enum.KeyCode then
                         if input.KeyCode == currentBind then isMatch = true end
-                    -- Check for Mouse Match
                     elseif typeof(currentBind) == "EnumItem" and currentBind.EnumType == Enum.UserInputType then
                         if input.UserInputType == currentBind then isMatch = true end
                     end
@@ -926,6 +915,19 @@ end
     end
 
     FireToggle(true)
+
+    -- ========================================================
+    -- HOOK AUTOMATION LOGIC (Appended directly at the bottom)
+    -- ========================================================
+    if not _G.UI_Elements then 
+        _G.UI_Elements = { Toggles = {} } 
+    end
+
+    _G.UI_Elements.Toggles[togglename] = function(state)
+        if ToggleEnabled ~= state then
+            FireToggle(false) -- This forces the visual button layout to simulate a real click
+        end
+    end
 end
         function PageElements:addSlider(slidername,minvalue,maxvalue,callback)
     local SliderHolder = Instance.new("Frame")
