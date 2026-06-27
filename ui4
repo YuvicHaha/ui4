@@ -11,10 +11,11 @@ wait(0.069)
 
 local Library = {}
 
-local UI_States = {
+-- Inside your GitHub repository script at the top:
+_G.UI_States = {
     Toggles = {},
     Sliders = {},
-    TextBoxes = {}
+    TextBoxes = {},
     Dropdowns = {}
 }
 function Library:CreateWindow(windowname,windowinfo)
