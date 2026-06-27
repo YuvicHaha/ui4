@@ -910,7 +910,32 @@ function Library:CreateWindow(windowname,windowinfo)
         end)
     end
 
-    FireToggle(true)
+    local ToggleController = {}
+    
+    function ToggleController:Set(state)
+        ToggleEnabled = state
+        
+        -- Instantly animate the toggle ball to match the loaded state
+        local targetX = ToggleEnabled and 0.455 or 0.123
+        ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
+        
+        if not ToggleEnabled and closeColorPanel then
+            closeColorPanel()
+        end
+        
+        UpdateScreenButtonVisuals()
+        pcall(callback, ToggleEnabled)
+    end
+
+    -- Setup initial positioning safely
+    if defaultState == true then
+        ToggleController:Set(true)
+    else
+        ToggleBall.Position = UDim2.new(0.123, 0, 0, 3.5)
+        UpdateScreenButtonVisuals()
+    end
+
+    return ToggleController -- This passes control back to your main script
 end
         function PageElements:addSlider(slidername,minvalue,maxvalue,callback)
     local SliderHolder = Instance.new("Frame")
