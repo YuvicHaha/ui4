@@ -769,20 +769,20 @@ function Library:CreateWindow(windowname,windowinfo)
     end
 
     local function FireToggle(skipCallback)
-        if not skipCallback then
-            ToggleEnabled = not ToggleEnabled
-        end
-        
-        local targetX = ToggleEnabled and 0.455 or 0.123
-        ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
-        
-        if not ToggleEnabled and closeColorPanel then
-            closeColorPanel()
-        end
-        
-        UpdateScreenButtonVisuals()
-        pcall(callback, ToggleEnabled)
+    if not skipCallback then
+        ToggleEnabled = not ToggleEnabled -- <--- THIS CHANGES THE INTERNAL STATE
     end
+    
+    local targetX = ToggleEnabled and 0.455 or 0.123
+    ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
+    
+    if not ToggleEnabled and closeColorPanel then
+        closeColorPanel()
+    end
+    
+    UpdateScreenButtonVisuals()
+    pcall(callback, ToggleEnabled) -- <--- THIS RUNS YOUR MAIN SCRIPT FUNCTION
+end
 
     ToggleButton.MouseButton1Down:Connect(function() FireToggle(false) end)
 
