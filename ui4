@@ -897,6 +897,7 @@ function Library:CreateWindow(windowname,windowinfo)
         if ToggleEnabled ~= state then
             FireToggle(false) -- Dynamically forces the ball to slide and runs the script logic safely!
         end
+       callback(state)
     end
     return ToggleController
 end
