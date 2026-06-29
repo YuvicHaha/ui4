@@ -1329,6 +1329,24 @@ end
                 end
             end)	
 
+            -- Helper internal function to process selection and update configuration tracking maps
+            local function SelectValue(v, isConfigLoad)
+                LibraryConfigs[dropdownname] = v
+                
+                -- Visually change color of selected option button inside the UI panel layout structure
+                for _, opt in pairs(DropdownOptionContainer:GetChildren()) do
+                    if opt:IsA("TextButton") then
+                        if opt.Text == v then
+                            opt.TextColor3 = Color3.fromRGB(137, 246, 255)
+                        else
+                            opt.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        end
+                    end
+                end
+                
+                pcall(callback, v)
+            end
+
             for i,v in pairs(list) do  
                 local Option = Instance.new("TextButton")
                 local OptionCorner = Instance.new("UICorner")
@@ -1356,15 +1374,6 @@ end
                 Option.MouseLeave:Connect(function()
                     Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
                 end)
-                
-                Option.MouseButton1Down:Connect(function()
-                    for _,opt in pairs(Option.Parent:GetChildren()) do
-                        if opt:IsA("GuiButton") and opt ~= Option then
-                            opt.TextColor3 = Color3.fromRGB(255,255,255)
-                        end
-                    end
-                    Option.TextColor3 = Color3.fromRGB(137, 246, 255)
-                end)
 
                 Option.MouseButton1Down:Connect(function()
                     DropDownEnabled = false
@@ -1373,12 +1382,14 @@ end
                     task.wait(0.2)
                     DropdownOptionContainer.Visible = false
                     DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
-                    pcall(callback, v)
+                    
+                    SelectValue(v, false) -- FIX: Saves state and fires callback tracking mechanisms
+                    
                     task.wait(0.3)
                     makeelements(true, DropdownHolder)
                     DropdownContainer.Visible = false
                     DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) 
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) 
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out".
                 end) 
             end
         end
