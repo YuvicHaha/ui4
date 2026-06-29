@@ -1373,6 +1373,24 @@ if typeof(makefolder) == "function" then
     pcall(function() makefolder(folderName) end)
 end
 
+-- Utility: Returns a clean list of file names without the path and extension
+function Library:GetConfigList()
+    local configs = {}
+    if typeof(listfiles) == "function" then
+        local files = listfiles(folderName)
+        for _, filePath in pairs(files) do
+            -- Extracts just the filename from "SkidoConfigs/myconfig.json"
+            local fileName = filePath:match("([^/]+)%.json$")
+            if fileName and fileName ~= "SkidoAutoLoadSetting" then
+                table.insert(configs, fileName)
+            end
+        end
+    end
+    -- Fallback default if empty
+    if #configs == 0 then table.insert(configs, "No configs found") end
+    return configs 
+end -- Added missing function closing tag here
+
 function Library:SaveConfig(configName)
     if not configName or configName == "" then return false end
     if typeof(writefile) ~= "function" then return false end
@@ -1419,4 +1437,5 @@ function Library:LoadConfig(configName)
     end
     return false
 end
+
 return Library
