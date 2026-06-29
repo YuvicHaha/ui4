@@ -1299,7 +1299,6 @@ end
             DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
             DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
             
-            -- FIX: Centralized close layout function to force clean visual resets
             local function CloseDropdownVisuals()
                 DropDownEnabled = false
                 DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
@@ -1375,7 +1374,7 @@ end
 
                     Option.MouseButton1Down:Connect(function()
                         SelectValue(v)
-                        CloseDropdownVisuals() -- FIX: Closes layout gracefully when option is selected manually
+                        CloseDropdownVisuals()
                     end)
                 end
             end
@@ -1384,13 +1383,27 @@ end
 
             ElementRegistry[dropdownname] = function(value)
                 if typeof(value) == "table" and value.Type == "RefreshDropdown" then
+                    -- 1. Wipe the old UI option instances
                     for _, child in pairs(DropdownOptionContainer:GetChildren()) do
                         if child:IsA("TextButton") then child:Destroy() end
                     end
+                    
+                    -- 2. Build the new lists
                     AddOptionsToList(value.List)
+                    
+                    -- FIX: Force the UI to recalculate canvas scaling options instantly
+                    -- This ensures your custom layout rendering registers the layout recalculations
+                    DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownOptionContainerLayout.AbsoluteContentSize.Y + 15)
+                    
+                    -- 3. Cycle the state visual tracking engine 
+                    if DropDownEnabled then
+                        makeelements(false, DropdownHolder)
+                    else
+                        makeelements(true, DropdownHolder)
+                    end
                 else
                     SelectValue(value)
-                    CloseDropdownVisuals() -- FIX: Ensures loading configuration files doesn't leave panels open
+                    CloseDropdownVisuals()
                 end
             end
         end
