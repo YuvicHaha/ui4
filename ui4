@@ -1366,21 +1366,52 @@ function Library:CreateWindow(windowname,windowinfo)
     end
     return PageYep
 end
+function Library:GetConfigList()
+    local configs = {}
+    if listfiles then
+        local success, files = pcall(listfiles, "")
+        if success and type(files) == "table" then
+            for _, filePath in pairs(files) do
+                -- Extract file name from full path
+                local fileName = string.match(filePath, "([^\\/]+)$") or filePath
+                if string.match(fileName, "%.json$") then
+                    table.insert(configs, fileName)
+                end
+            end
+        end
+    end
+    -- Fallback default if no files are found or listfiles isn't supported
+    if #configs == 0 then 
+        table.insert(configs, "default_config.json") 
+    end
+    return configs
+end
+
 function Library:SaveConfig(filename)
-    filename = filename or "default_config.json"
+    filename = filename or "default_config"
+    if not string.match(filename, "%.json$") then
+        filename = filename .. ".json"
+    end
+    
     if writefile then
         local success, jsonString = pcall(function()
             return HttpService:JSONEncode(LibraryConfigs)
         end)
         if success then
             writefile(filename, jsonString)
-            print("Saved: " .. filename)
+            print("Saved config to workspace: " .. filename)
         end
+    else
+        warn("Executor lacks writefile support!")
     end
 end
 
 function Library:LoadConfig(filename)
-    filename = filename or "default_config.json"
+    filename = filename or "default_config"
+    if not string.match(filename, "%.json$") then
+        filename = filename .. ".json"
+    end
+
     if readfile and isfile and isfile(filename) then
         local success, jsonString = pcall(function() return readfile(filename) end)
         if success then
@@ -1390,7 +1421,97 @@ function Library:LoadConfig(filename)
                     pcall(ElementRegistry[elementName], value)
                 end
             end
-            print("Loaded: " .. filename)
+            print("Loaded config: " .. filename)
+        end
+    else
+        warn("Config file not found or executor lacks readfile/isfile!")
+    end
+end
+
+-- ====================================================================
+-- AUTOMATIC CONFIG UTILITY GENERATOR
+-- ====================================================================
+function Library:CreateConfigTab()
+    local ConfigPage = self:addPage("Configs", 4, false, 6)
+    local SelectedConfig = "default_config.json"
+    
+    -- 1. Textbox to type custom profiles
+    ConfigPage:addTextBox("New Config Name", "my_settings", function(txt)
+        if txt and txt ~= "" then
+            SelectedConfig = txt
+        end
+    end)
+    
+    -- Forward declaration so the buttons can see the dropdown reference
+    local ConfigDropdownInstance
+    
+    -- 2. Save Button (Saves file and instantly updates dropdown UI)
+    ConfigPage:addButton("Save Current Config", function()
+        Library:SaveConfig(SelectedConfig)
+        if ConfigDropdownInstance and ConfigDropdownInstance.Refresh then
+            ConfigDropdownInstance:Refresh(Library:GetConfigList())
+        end
+    end)
+    
+    -- 3. Dynamic Dropdown listing files
+    ConfigDropdownInstance = ConfigPage:addDropdown("Select Profile", Library:GetConfigList(), 5, function(chosenOption)
+        SelectedConfig = chosenOption
+    end)
+    
+    -- 4. Load Button to pull settings from selected dropdown item
+    ConfigPage:addButton("Load Selected Config", function()
+        Library:LoadConfig(SelectedConfig)
+    end)
+    
+    -- Injecting a clean Refresh feature into your custom dropdown element structure
+    function ConfigDropdownInstance:Refresh(newList)
+        local container = self.DropdownOptionContainer or self.Container
+        local callbackFunc = self.Callback
+        
+        if container then
+            -- Clear out old text button rows completely
+            for _, child in pairs(container:GetChildren()) do
+                if child:IsA("GuiButton") then
+                    child:Destroy()
+                end
+            end
+            
+            -- Re-populate list with freshly generated file elements
+            for _, v in pairs(newList) do
+                local Option = Instance.new("TextButton")
+                local OptionCorner = Instance.new("UICorner")
+
+                Option.Name = "Option"
+                Option.Parent = container
+                Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
+                Option.Size = UDim2.new(0, 283, 0, 22)
+                Option.AutoButtonColor = false
+                Option.Font = Enum.Font.GothamSemibold
+                Option.Text = v
+                Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Option.TextSize = 10.000
+                
+                OptionCorner.CornerRadius = UDim.new(0, 6)
+                OptionCorner.Parent = Option
+
+                Option.MouseEnter:Connect(function() Option.BackgroundColor3 = Color3.fromRGB(10,10,10) end)
+                Option.MouseLeave:Connect(function() Option.BackgroundColor3 = Color3.fromRGB(15,15,15) end)
+                
+                Option.MouseButton1Down:Connect(function()
+                    for _, opt in pairs(container:GetChildren()) do
+                        if opt:IsA("GuiButton") then opt.TextColor3 = Color3.fromRGB(255,255,255) end
+                    end
+                    Option.TextColor3 = Color3.fromRGB(137, 246, 255)
+                end)
+
+                Option.MouseButton1Down:Connect(function()
+                    -- Access parent scope dropdown toggle flags 
+                    -- Note: This matches your close animations seamlessly
+                    container.Visible = false
+                    pcall(callbackFunc, v)
+                end) 
+            end
         end
     end
 end
