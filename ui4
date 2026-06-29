@@ -478,655 +478,676 @@ function Library:CreateWindow(windowname,windowinfo)
         end
 
         function PageElements:addToggle(togglename, arg2, arg3, arg4, arg5, arg6, arg7)
-            local ToggleHolder = Instance.new("Frame")
-            local ToggleHolderCorner = Instance.new("UICorner")
-            local ToggleTitle = Instance.new("TextLabel")
-            local ToggleButton = Instance.new("TextButton")
-            local ToggleFrame = Instance.new("Frame")
-            local ToggleFrameCorner = Instance.new("UICorner")
-            local ToggleBall = Instance.new("Frame")
-            local ToggleBallCorner = Instance.new("UICorner")
-            local BindButton = Instance.new("TextButton") 
-            local BindButtonCorner = Instance.new("UICorner")
+    local ToggleHolder = Instance.new("Frame")
+    local ToggleHolderCorner = Instance.new("UICorner")
+    local ToggleTitle = Instance.new("TextLabel")
+    local ToggleButton = Instance.new("TextButton")
+    local ToggleFrame = Instance.new("Frame")
+    local ToggleFrameCorner = Instance.new("UICorner")
+    local ToggleBall = Instance.new("Frame")
+    local ToggleBallCorner = Instance.new("UICorner")
+    local BindButton = Instance.new("TextButton") 
+    local BindButtonCorner = Instance.new("UICorner")
 
-            local keybind, defaultState, callback, hasColorPicker, defaultColor, colorCallback
-            local hasKeybind = false 
+    local keybind, defaultState, callback, hasColorPicker, defaultColor, colorCallback
+    local hasKeybind = false 
 
-            if typeof(arg2) == "EnumItem" then
-                keybind = arg2
-                hasKeybind = true
-                callback = arg3 or function() end
-                if typeof(arg4) == "boolean" then
-                    defaultState = arg4
-                    hasColorPicker = arg5 or false
-                    defaultColor = arg6
-                    colorCallback = arg7
-                else
-                    defaultState = false
-                    hasColorPicker = arg4 or false
-                    defaultColor = arg5
-                    colorCallback = arg6
-                end
+    if typeof(arg2) == "EnumItem" then
+        keybind = arg2
+        hasKeybind = true
+        callback = arg3 or function() end
+        if typeof(arg4) == "boolean" then
+            defaultState = arg4
+            hasColorPicker = arg5 or false
+            defaultColor = arg6
+            colorCallback = arg7
+        else
+            defaultState = false
+            hasColorPicker = arg4 or false
+            defaultColor = arg5
+            colorCallback = arg6
+        end
+    else
+        keybind = nil
+        if typeof(arg2) == "boolean" then
+            defaultState = arg2
+            callback = arg3 or function() end
+            hasColorPicker = arg4 or false
+            defaultColor = arg5
+            colorCallback = arg6
+        else
+            defaultState = false
+            callback = arg2 or function() end
+            hasColorPicker = arg3 or false
+            defaultColor = arg4
+            colorCallback = arg5
+        end
+    end
+
+    hasColorPicker = hasColorPicker or false
+    defaultColor = defaultColor or Color3.fromRGB(255, 255, 255)
+    colorCallback = colorCallback or function() end
+    local currentColor = defaultColor
+
+    local ToggleEnabled = defaultState
+    local isListening = false
+    local currentBind = (keybind ~= Enum.KeyCode.Unknown) and keybind or nil 
+    local bindMode = "Toggle" 
+    local UserInputService = game:GetService("UserInputService")
+    
+    local isMobile = UserInputService.TouchEnabled
+    local screenButton = nil
+    local mobileDragConn = nil
+    local closeColorPanel = nil
+    local closeModeDropdown = nil
+
+    ToggleHolder.Name = "ToggleHolder"
+    ToggleHolder.Parent = Home 
+    ToggleHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    ToggleHolder.BorderSizePixel = 0
+    ToggleHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
+    ToggleHolder.Size = UDim2.new(0, 288, 0, 26)
+    ToggleHolder.ClipsDescendants = false
+    
+    ToggleHolderCorner.CornerRadius = UDim.new(0, 5)
+    ToggleHolderCorner.Parent = ToggleHolder
+    
+    ToggleTitle.Name = "ToggleTitle"
+    ToggleTitle.Parent = ToggleHolder
+    ToggleTitle.BackgroundTransparency = 1.000
+    ToggleTitle.Position = UDim2.new(0.024, 0, 0, 1)
+    ToggleTitle.Size = UDim2.new(0, 110, 0, 24)
+    ToggleTitle.Font = Enum.Font.GothamSemibold
+    ToggleTitle.Text = togglename or ""
+    ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleTitle.TextSize = 11.000
+    ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+    BindButton.Name = "BindButton"
+    BindButton.Parent = ToggleHolder
+    BindButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    BindButton.Position = hasColorPicker and UDim2.new(0.42, 0, 0, 4) or UDim2.new(0.50, 0, 0, 4)
+    BindButton.Size = UDim2.new(0, 45, 0, 18)
+    BindButton.Font = Enum.Font.GothamSemibold
+    
+    local function UpdateBindButtonText()
+        if isMobile then
+            BindButton.Text = "Show"
+        elseif currentBind then
+            if currentBind.EnumType == Enum.UserInputType then
+                BindButton.Text = string.gsub(currentBind.Name, "MouseButton", "MB")
             else
-                keybind = nil
-                if typeof(arg2) == "boolean" then
-                    defaultState = arg2
-                    callback = arg3 or function() end
-                    hasColorPicker = arg4 or false
-                    defaultColor = arg5
-                    colorCallback = arg6
-                else
-                    defaultState = false
-                    callback = arg2 or function() end
-                    hasColorPicker = arg3 or false
-                    defaultColor = arg4
-                    colorCallback = arg5
-                end
+                BindButton.Text = currentBind.Name
             end
+        else
+            BindButton.Text = "None"
+        end
+    end
+    UpdateBindButtonText()
+    
+    BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+    BindButton.TextSize = 10.000
+    BindButton.Visible = (hasKeybind or isMobile)
+    
+    BindButtonCorner.CornerRadius = UDim.new(0, 4)
+    BindButtonCorner.Parent = BindButton
+    
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.Parent = ToggleHolder
+    ToggleButton.BackgroundTransparency = 1.000
+    ToggleButton.Position = UDim2.new(0.82, 0, 0, 0)
+    ToggleButton.Size = UDim2.new(0, 50, 0, 25)
+    ToggleButton.AutoButtonColor = false
+    
+    ToggleFrame.Name = "ToggleFrame"
+    ToggleFrame.Parent = ToggleButton
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+    ToggleFrame.Position = UDim2.new(0.2, 0, 0, 3)
+    ToggleFrame.Size = UDim2.new(0, 34, 0, 19)
+    
+    ToggleFrameCorner.Parent = ToggleFrame
+    
+    ToggleBall.Name = "ToggleBall"
+    ToggleBall.Parent = ToggleFrame
+    ToggleBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleBall.Position = ToggleEnabled and UDim2.new(0.455, 0, 0, 3.5) or UDim2.new(0.123, 0, 0, 3.5)
+    ToggleBall.Size = UDim2.new(0, 14, 0, 12)
+    
+    ToggleBallCorner.CornerRadius = UDim.new(0, 100)
+    ToggleBallCorner.Parent = ToggleBall
 
-            hasColorPicker = hasColorPicker or false
-            defaultColor = defaultColor or Color3.fromRGB(255, 255, 255)
-            colorCallback = colorCallback or function() end
-            local currentColor = defaultColor
+    local ModeButton = Instance.new("TextButton")
+    local ModeButtonCorner = Instance.new("UICorner")
+    local ModeDropdownPanel = Instance.new("Frame")
+    local ModeDropdownLayout = Instance.new("UIListLayout")
+    local ModeToggleOpt = Instance.new("TextButton")
+    local ModeHoldOpt = Instance.new("TextButton")
 
-            local ToggleEnabled = defaultState
-            local isListening = false
-            local currentBind = (keybind ~= Enum.KeyCode.Unknown) and keybind or nil 
-            local bindMode = "Toggle" 
-            local UserInputService = game:GetService("UserInputService")
-            
-            local isMobile = UserInputService.TouchEnabled
-            local screenButton = nil
-            local mobileDragConn = nil
-            local closeColorPanel = nil
-            local closeModeDropdown = nil
+    ModeButton.Name = "ModeButton"
+    ModeButton.Parent = ToggleHolder
+    ModeButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    ModeButton.Position = hasColorPicker and UDim2.new(0.59, 0, 0, 4) or UDim2.new(0.67, 0, 0, 4)
+    ModeButton.Size = UDim2.new(0, 42, 0, 18)
+    ModeButton.Font = Enum.Font.GothamSemibold
+    ModeButton.Text = "Toggle"
+    ModeButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+    ModeButton.TextSize = 9.000
+    ModeButton.Visible = (hasKeybind and not isMobile)
 
-            ToggleHolder.Name = "ToggleHolder"
-            ToggleHolder.Parent = Home 
-            ToggleHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            ToggleHolder.BorderSizePixel = 0
-            ToggleHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
+    ModeButtonCorner.CornerRadius = UDim.new(0, 4)
+    ModeButtonCorner.Parent = ModeButton
+
+    ModeDropdownPanel.Name = "ModeDropdownPanel"
+    ModeDropdownPanel.Parent = ToggleHolder
+    ModeDropdownPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    ModeDropdownPanel.BorderSizePixel = 0
+    ModeDropdownPanel.Position = hasColorPicker and UDim2.new(0.59, 0, 0, 24) or UDim2.new(0.67, 0, 0, 24)
+    ModeDropdownPanel.Size = UDim2.new(0, 42, 0, 36)
+    ModeDropdownPanel.Visible = false
+    ModeDropdownPanel.ZIndex = 5
+    
+    local ModePanelCorner = Instance.new("UICorner")
+    ModePanelCorner.CornerRadius = UDim.new(0, 4)
+    ModePanelCorner.Parent = ModeDropdownPanel
+
+    ModeDropdownLayout.Parent = ModeDropdownPanel
+    ModeDropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local function createModeOption(text, order)
+        local opt = Instance.new("TextButton")
+        opt.Size = UDim2.new(1, 0, 0, 18)
+        opt.BackgroundTransparency = 1
+        opt.Font = Enum.Font.GothamSemibold
+        opt.Text = text
+        opt.TextColor3 = Color3.fromRGB(150, 150, 150)
+        opt.TextSize = 9.000
+        opt.LayoutOrder = order
+        opt.Parent = ModeDropdownPanel
+        return opt
+    end
+
+    ModeToggleOpt = createModeOption("Toggle", 1)
+    ModeHoldOpt = createModeOption("Hold", 2)
+
+    local isModeOpen = false
+    closeModeDropdown = function()
+        isModeOpen = false
+        ModeDropdownPanel.Visible = false
+        ToggleHolder.ZIndex = 1
+    end
+
+    -- FIX: Centralized logic wrapper to dynamically save the expanded keybind metrics
+    local function UpdateConfigsState()
+        LibraryConfigs[togglename] = {
+            State = ToggleEnabled,
+            BindMode = bindMode,
+            Keybind = currentBind and tostring(currentBind) or "None"
+        }
+    end
+
+    ModeButton.MouseButton1Down:Connect(function()
+        if closeColorPanel then closeColorPanel() end
+        isModeOpen = not isModeOpen
+        ModeDropdownPanel.Visible = isModeOpen
+        ToggleHolder.ZIndex = isModeOpen and 3 or 1
+    end)
+
+    ModeToggleOpt.MouseButton1Down:Connect(function()
+        bindMode = "Toggle"
+        ModeButton.Text = "Toggle"
+        closeModeDropdown()
+        UpdateConfigsState()
+    end)
+
+    ModeHoldOpt.MouseButton1Down:Connect(function()
+        bindMode = "Hold"
+        ModeButton.Text = "Hold"
+        closeModeDropdown()
+        UpdateConfigsState()
+    end)
+
+    if hasColorPicker then
+        local ColorButton = Instance.new("TextButton")
+        local ColorButtonCorner = Instance.new("UICorner")
+        local ColorPickerPanel = Instance.new("Frame")
+        local PanelCorner = Instance.new("UICorner")
+        local ColorCanvas = Instance.new("ImageButton") 
+        local PickerCircle = Instance.new("Frame")
+        local PickerCircleCorner = Instance.new("UICorner")
+
+        ColorButton.Name = "ColorButton"
+        ColorButton.Parent = ToggleHolder
+        ColorButton.BackgroundColor3 = currentColor
+        ColorButton.Position = UDim2.new(0.75, 0, 0, 4) 
+        ColorButton.Size = UDim2.new(0, 16, 0, 18)
+        ColorButton.Text = ""
+
+        ColorButtonCorner.CornerRadius = UDim.new(0, 4)
+        ColorButtonCorner.Parent = ColorButton
+
+        ColorPickerPanel.Name = "ColorPickerPanel"
+        ColorPickerPanel.Parent = ToggleHolder
+        ColorPickerPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        ColorPickerPanel.Position = UDim2.new(0, 4, 0, 30)
+        ColorPickerPanel.Size = UDim2.new(0, 280, 0, 110)
+        ColorPickerPanel.Visible = false
+        ColorPickerPanel.BorderSizePixel = 0
+        ColorPickerPanel.Active = true 
+
+        PanelCorner.CornerRadius = UDim.new(0, 6)
+        PanelCorner.Parent = ColorPickerPanel
+
+        ColorCanvas.Name = "ColorCanvas"
+        ColorCanvas.Parent = ColorPickerPanel
+        ColorCanvas.BackgroundTransparency = 1.000 
+        ColorCanvas.Position = UDim2.new(0, 8, 0, 8)
+        ColorCanvas.Size = UDim2.new(1, -16, 1, -16)
+        ColorCanvas.Image = "rbxassetid://143332548" 
+        ColorCanvas.ImageColor3 = Color3.fromRGB(255, 255, 255) 
+        ColorCanvas.Active = true            
+        ColorCanvas.AutoButtonColor = false 
+
+        PickerCircle.Name = "PickerCircle"
+        PickerCircle.Parent = ColorCanvas
+        PickerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+        PickerCircle.BackgroundColor3 = currentColor
+        PickerCircle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PickerCircle.BorderSizePixel = 2
+        PickerCircle.Size = UDim2.new(0, 10, 0, 10)
+        PickerCircle.Position = UDim2.new(0.5, 0, 0.5, 0) 
+        
+        PickerCircleCorner.CornerRadius = UDim.new(1, 0)
+        PickerCircleCorner.Parent = PickerCircle
+
+        local isPanelOpen = false
+        
+        closeColorPanel = function()
+            isPanelOpen = false
+            ColorPickerPanel.Visible = false
             ToggleHolder.Size = UDim2.new(0, 288, 0, 26)
-            ToggleHolder.ClipsDescendants = false
-            
-            ToggleHolderCorner.CornerRadius = UDim.new(0, 5)
-            ToggleHolderCorner.Parent = ToggleHolder
-            
-            ToggleTitle.Name = "ToggleTitle"
-            ToggleTitle.Parent = ToggleHolder
-            ToggleTitle.BackgroundTransparency = 1.000
-            ToggleTitle.Position = UDim2.new(0.024, 0, 0, 1)
-            ToggleTitle.Size = UDim2.new(0, 110, 0, 24)
-            ToggleTitle.Font = Enum.Font.GothamSemibold
-            ToggleTitle.Text = togglename or ""
-            ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-            ToggleTitle.TextSize = 11.000
-            ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+            makeelements(true, ToggleHolder)
+        end
 
-            BindButton.Name = "BindButton"
-            BindButton.Parent = ToggleHolder
-            BindButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-            BindButton.Position = hasColorPicker and UDim2.new(0.42, 0, 0, 4) or UDim2.new(0.50, 0, 0, 4)
-            BindButton.Size = UDim2.new(0, 45, 0, 18)
-            BindButton.Font = Enum.Font.GothamSemibold
-            
-            if isMobile then
-                BindButton.Text = "Show"
-                if not shared.SkidoMobileGui then
-                    shared.SkidoMobileGui = Instance.new("ScreenGui")
-                    shared.SkidoMobileGui.Name = "SkidoMobileScreenButtons"
-                    shared.SkidoMobileGui.ResetOnSpawn = false
-                    shared.SkidoMobileGui.Parent = (getgenv and getgenv().gethui and getgenv().gethui()) or game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-                end
-                shared.SkidoMobileOffsetCount = shared.SkidoMobileOffsetCount or 0
+        ColorButton.MouseButton1Down:Connect(function()
+            closeModeDropdown()
+            isPanelOpen = not isPanelOpen
+            ColorPickerPanel.Visible = isPanelOpen
+            makeelements(not isPanelOpen, ToggleHolder)
+            if isPanelOpen then
+                ToggleHolder.Size = UDim2.new(0, 288, 0, 146)
             else
-                if currentBind then
-                    if currentBind.EnumType == Enum.UserInputType then
-                        BindButton.Text = string.gsub(currentBind.Name, "MouseButton", "MB")
-                    else
-                        BindButton.Text = currentBind.Name
-                    end
-                else
-                    BindButton.Text = "None"
-                end
+                closeColorPanel()
             end
-            
-            BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
-            BindButton.TextSize = 10.000
-            BindButton.Visible = (hasKeybind or isMobile)
-            
-            BindButtonCorner.CornerRadius = UDim.new(0, 4)
-            BindButtonCorner.Parent = BindButton
-            
-            ToggleButton.Name = "ToggleButton"
-            ToggleButton.Parent = ToggleHolder
-            ToggleButton.BackgroundTransparency = 1.000
-            ToggleButton.Position = UDim2.new(0.82, 0, 0, 0)
-            ToggleButton.Size = UDim2.new(0, 50, 0, 25)
-            ToggleButton.AutoButtonColor = false
-            
-            ToggleFrame.Name = "ToggleFrame"
-            ToggleFrame.Parent = ToggleButton
-            ToggleFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-            ToggleFrame.Position = UDim2.new(0.2, 0, 0, 3)
-            ToggleFrame.Size = UDim2.new(0, 34, 0, 19)
-            
-            ToggleFrameCorner.Parent = ToggleFrame
-            
-            ToggleBall.Name = "ToggleBall"
-            ToggleBall.Parent = ToggleFrame
-            ToggleBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ToggleBall.Position = ToggleEnabled and UDim2.new(0.455, 0, 0, 3.5) or UDim2.new(0.123, 0, 0, 3.5)
-            ToggleBall.Size = UDim2.new(0, 14, 0, 12)
-            
-            ToggleBallCorner.CornerRadius = UDim.new(0, 100)
-            ToggleBallCorner.Parent = ToggleBall
+        end)
 
-            local ModeButton = Instance.new("TextButton")
-            local ModeButtonCorner = Instance.new("UICorner")
-            local ModeDropdownPanel = Instance.new("Frame")
-            local ModeDropdownLayout = Instance.new("UIListLayout")
-            local ModeToggleOpt = Instance.new("TextButton")
-            local ModeHoldOpt = Instance.new("TextButton")
+        local isDraggingColor = false
 
-            ModeButton.Name = "ModeButton"
-            ModeButton.Parent = ToggleHolder
-            ModeButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-            ModeButton.Position = hasColorPicker and UDim2.new(0.59, 0, 0, 4) or UDim2.new(0.67, 0, 0, 4)
-            ModeButton.Size = UDim2.new(0, 42, 0, 18)
-            ModeButton.Font = Enum.Font.GothamSemibold
-            ModeButton.Text = "Toggle"
-            ModeButton.TextColor3 = Color3.fromRGB(150, 150, 150)
-            ModeButton.TextSize = 9.000
-            ModeButton.Visible = (hasKeybind and not isMobile)
+        local function UpdateLiveColor(input)
+            local size = ColorCanvas.AbsoluteSize
+            local pos = ColorCanvas.AbsolutePosition
+            local mousePos = input.Position
 
-            ModeButtonCorner.CornerRadius = UDim.new(0, 4)
-            ModeButtonCorner.Parent = ModeButton
+            local pctX = math.clamp((mousePos.X - pos.X) / size.X, 0, 1)
+            local pctY = math.clamp((mousePos.Y - pos.Y) / size.Y, 0, 1)
 
-            ModeDropdownPanel.Name = "ModeDropdownPanel"
-            ModeDropdownPanel.Parent = ToggleHolder
-            ModeDropdownPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            ModeDropdownPanel.BorderSizePixel = 0
-            ModeDropdownPanel.Position = hasColorPicker and UDim2.new(0.59, 0, 0, 24) or UDim2.new(0.67, 0, 0, 24)
-            ModeDropdownPanel.Size = UDim2.new(0, 42, 0, 36)
-            ModeDropdownPanel.Visible = false
-            ModeDropdownPanel.ZIndex = 5
-            
-            local ModePanelCorner = Instance.new("UICorner")
-            ModePanelCorner.CornerRadius = UDim.new(0, 4)
-            ModePanelCorner.Parent = ModeDropdownPanel
+            PickerCircle.Position = UDim2.new(pctX, 0, pctY, 0)
+            currentColor = Color3.fromHSV(pctX, 1 - pctY, 1)
+            ColorButton.BackgroundColor3 = currentColor
+            PickerCircle.BackgroundColor3 = currentColor 
+            pcall(colorCallback, currentColor)
+        end
 
-            ModeDropdownLayout.Parent = ModeDropdownPanel
-            ModeDropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-            local function createModeOption(text, order)
-                local opt = Instance.new("TextButton")
-                opt.Size = UDim2.new(1, 0, 0, 18)
-                opt.BackgroundTransparency = 1
-                opt.Font = Enum.Font.GothamSemibold
-                opt.Text = text
-                opt.TextColor3 = Color3.fromRGB(150, 150, 150)
-                opt.TextSize = 9.000
-                opt.LayoutOrder = order
-                opt.Parent = ModeDropdownPanel
-                return opt
+        ColorCanvas.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                isDraggingColor = true
+                UpdateLiveColor(input)
             end
+        end)
 
-            ModeToggleOpt = createModeOption("Toggle", 1)
-            ModeHoldOpt = createModeOption("Hold", 2)
-
-            local isModeOpen = false
-            closeModeDropdown = function()
-                isModeOpen = false
-                ModeDropdownPanel.Visible = false
-                ToggleHolder.ZIndex = 1
+        UserInputService.InputChanged:Connect(function(input)
+            if isDraggingColor and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                UpdateLiveColor(input)
             end
+        end)
 
-            ModeButton.MouseButton1Down:Connect(function()
-                if closeColorPanel then closeColorPanel() end
-                isModeOpen = not isModeOpen
-                ModeDropdownPanel.Visible = isModeOpen
-                if isModeOpen then
-                    ToggleHolder.ZIndex = 3
-                else
-                    ToggleHolder.ZIndex = 1
-                end
-            end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                isDraggingColor = false
+            end
+        end)
+    end
 
-            ModeToggleOpt.MouseButton1Down:Connect(function()
-                bindMode = "Toggle"
-                ModeButton.Text = "Toggle"
-                closeModeDropdown()
-                ToggleHolder.ZIndex = 1
-            end)
+    local function UpdateScreenButtonVisuals()
+        if screenButton then
+            if ToggleEnabled then
+                screenButton.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
+                screenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            else
+                screenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                screenButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+            end
+        end
+    end
 
-            ModeHoldOpt.MouseButton1Down:Connect(function()
-                bindMode = "Hold"
-                ModeButton.Text = "Hold"
-                closeModeDropdown()
-                ToggleHolder.ZIndex = 1
-            end)
+    local function SetToggleState(newState)
+        ToggleEnabled = newState
+        UpdateConfigsState()
+        local targetX = ToggleEnabled and 0.455 or 0.123
+        
+        ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
+        
+        if not ToggleEnabled and closeColorPanel then
+            closeColorPanel()
+        end
+        
+        UpdateScreenButtonVisuals()
+        pcall(callback, ToggleEnabled)
+    end
 
-            if hasColorPicker then
-                local ColorButton = Instance.new("TextButton")
-                local ColorButtonCorner = Instance.new("UICorner")
-                local ColorPickerPanel = Instance.new("Frame")
-                local PanelCorner = Instance.new("UICorner")
-                local ColorCanvas = Instance.new("ImageButton") 
-                local PickerCircle = Instance.new("Frame")
-                local PickerCircleCorner = Instance.new("UICorner")
+    local function FireToggle(skipCallback)
+        if skipCallback then
+            SetToggleState(ToggleEnabled)
+        else
+            SetToggleState(not ToggleEnabled)
+        end
+    end
 
-                ColorButton.Name = "ColorButton"
-                ColorButton.Parent = ToggleHolder
-                ColorButton.BackgroundColor3 = currentColor
-                ColorButton.Position = UDim2.new(0.75, 0, 0, 4) 
-                ColorButton.Size = UDim2.new(0, 16, 0, 18)
-                ColorButton.Text = ""
+    ToggleButton.MouseButton1Down:Connect(function() FireToggle(false) end)
 
-                ColorButtonCorner.CornerRadius = UDim.new(0, 4)
-                ColorButtonCorner.Parent = ColorButton
-
-                ColorPickerPanel.Name = "ColorPickerPanel"
-                ColorPickerPanel.Parent = ToggleHolder
-                ColorPickerPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-                ColorPickerPanel.Position = UDim2.new(0, 4, 0, 30)
-                ColorPickerPanel.Size = UDim2.new(0, 280, 0, 110)
-                ColorPickerPanel.Visible = false
-                ColorPickerPanel.BorderSizePixel = 0
-                ColorPickerPanel.Active = true 
-
-                PanelCorner.CornerRadius = UDim.new(0, 6)
-                PanelCorner.Parent = ColorPickerPanel
-
-                ColorCanvas.Name = "ColorCanvas"
-                ColorCanvas.Parent = ColorPickerPanel
-                ColorCanvas.BackgroundTransparency = 1.000 
-                ColorCanvas.Position = UDim2.new(0, 8, 0, 8)
-                ColorCanvas.Size = UDim2.new(1, -16, 1, -16)
-                ColorCanvas.Image = "rbxassetid://143332548" 
-                ColorCanvas.ImageColor3 = Color3.fromRGB(255, 255, 255) 
-                ColorCanvas.Active = true            
-                ColorCanvas.AutoButtonColor = false 
-
-                PickerCircle.Name = "PickerCircle"
-                PickerCircle.Parent = ColorCanvas
-                PickerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
-                PickerCircle.BackgroundColor3 = currentColor
-                PickerCircle.BorderColor3 = Color3.fromRGB(0, 0, 0)
-                PickerCircle.BorderSizePixel = 2
-                PickerCircle.Size = UDim2.new(0, 10, 0, 10)
-                PickerCircle.Position = UDim2.new(0.5, 0, 0.5, 0) 
+    if isMobile then
+        BindButton.MouseButton1Down:Connect(function()
+            if screenButton then
+                if mobileDragConn then mobileDragConn:Disconnect(); mobileDragConn = nil end
+                screenButton:Destroy()
+                screenButton = nil
+                BindButton.Text = "Show"
+                BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+            else
+                BindButton.Text = "Hide"
+                BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
                 
-                PickerCircleCorner.CornerRadius = UDim.new(1, 0)
-                PickerCircleCorner.Parent = PickerCircle
-
-                local isPanelOpen = false
+                screenButton = Instance.new("TextButton")
+                local screenCorner = Instance.new("UICorner")
                 
-                closeColorPanel = function()
-                    isPanelOpen = false
-                    ColorPickerPanel.Visible = false
-                    ToggleHolder.Size = UDim2.new(0, 288, 0, 26)
-                    makeelements(true, ToggleHolder) -- Restores layout view
-                end
-
-                ColorButton.MouseButton1Down:Connect(function()
-                    closeModeDropdown()
-                    isPanelOpen = not isPanelOpen
-                    ColorPickerPanel.Visible = isPanelOpen
-                    makeelements(not isPanelOpen, ToggleHolder) -- Hides surrounding frames so container scales cleanly
-                    if isPanelOpen then
-                        ToggleHolder.Size = UDim2.new(0, 288, 0, 146)
-                    else
-                        closeColorPanel()
-                    end
-                end)
-
-                local isDraggingColor = false
-
-                local function UpdateLiveColor(input)
-                    local size = ColorCanvas.AbsoluteSize
-                    local pos = ColorCanvas.AbsolutePosition
-                    local mousePos = input.Position
-
-                    local pctX = math.clamp((mousePos.X - pos.X) / size.X, 0, 1)
-                    local pctY = math.clamp((mousePos.Y - pos.Y) / size.Y, 0, 1)
-
-                    PickerCircle.Position = UDim2.new(pctX, 0, pctY, 0)
-                    currentColor = Color3.fromHSV(pctX, 1 - pctY, 1)
-                    ColorButton.BackgroundColor3 = currentColor
-                    PickerCircle.BackgroundColor3 = currentColor 
-                    pcall(colorCallback, currentColor)
-                end
-
-                ColorCanvas.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        isDraggingColor = true
-                        UpdateLiveColor(input)
-                    end
-                end)
-
-                UserInputService.InputChanged:Connect(function(input)
-                    if isDraggingColor and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                        UpdateLiveColor(input)
-                    end
-                end)
-
-                UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        isDraggingColor = false
-                    end
-                end)
-            end
-
-            local function UpdateScreenButtonVisuals()
-                if screenButton then
-                    if ToggleEnabled then
-                        screenButton.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
-                        screenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    else
-                        screenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                        screenButton.TextColor3 = Color3.fromRGB(160, 160, 160)
-                    end
-                end
-            end
-
-            local function SetToggleState(newState)
-                ToggleEnabled = newState
-                LibraryConfigs[togglename] = ToggleEnabled
-                local targetX = ToggleEnabled and 0.455 or 0.123
+                screenButton.Name = (togglename or "Toggle") .. "_Shortcut"
+                screenButton.Parent = shared.SkidoMobileGui
+                screenButton.Size = UDim2.new(0, 75, 0, 28)
                 
-                ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
+                local initialYOffset = (shared.SkidoMobileOffsetCount % 10) * 33
+                screenButton.Position = UDim2.new(1, -90, 0.35, initialYOffset)
+                shared.SkidoMobileOffsetCount = shared.SkidoMobileOffsetCount + 1
                 
-                if not ToggleEnabled and closeColorPanel then
-                    closeColorPanel()
-                end
+                screenButton.Font = Enum.Font.GothamBold
+                screenButton.Text = togglename or "Toggle"
+                screenButton.TextSize = 9.000
+                screenButton.TextWrapped = true
+                
+                screenCorner.CornerRadius = UDim.new(0, 5)
+                screenCorner.Parent = screenButton
                 
                 UpdateScreenButtonVisuals()
-                pcall(callback, ToggleEnabled)
-            end
-
-            local function FireToggle(skipCallback)
-                if skipCallback then
-                    SetToggleState(ToggleEnabled)
-                else
-                    SetToggleState(not ToggleEnabled)
-                end
-            end
-
-            ToggleButton.MouseButton1Down:Connect(function() FireToggle(false) end)
-
-            if isMobile then
-                BindButton.MouseButton1Down:Connect(function()
-                    if screenButton then
-                        if mobileDragConn then mobileDragConn:Disconnect(); mobileDragConn = nil end
-                        screenButton:Destroy()
-                        screenButton = nil
-                        BindButton.Text = "Show"
-                        BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
-                    else
-                        BindButton.Text = "Hide"
-                        BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                screenButton.MouseButton1Down:Connect(function() FireToggle(false) end)
+                
+                local dragging = false
+                local dragInput, dragStart, startPos
+                
+                screenButton.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        dragging = true
+                        dragStart = input.Position
+                        startPos = screenButton.Position
                         
-                        screenButton = Instance.new("TextButton")
-                        local screenCorner = Instance.new("UICorner")
-                        
-                        screenButton.Name = (togglename or "Toggle") .. "_Shortcut"
-                        screenButton.Parent = shared.SkidoMobileGui
-                        screenButton.Size = UDim2.new(0, 75, 0, 28)
-                        
-                        local initialYOffset = (shared.SkidoMobileOffsetCount % 10) * 33
-                        screenButton.Position = UDim2.new(1, -90, 0.35, initialYOffset)
-                        shared.SkidoMobileOffsetCount = shared.SkidoMobileOffsetCount + 1
-                        
-                        screenButton.Font = Enum.Font.GothamBold
-                        screenButton.Text = togglename or "Toggle"
-                        screenButton.TextSize = 9.000
-                        screenButton.TextWrapped = true
-                        
-                        screenCorner.CornerRadius = UDim.new(0, 5)
-                        screenCorner.Parent = screenButton
-                        
-                        UpdateScreenButtonVisuals()
-                        screenButton.MouseButton1Down:Connect(function() FireToggle(false) end)
-                        
-                        local dragging = false
-                        local dragInput, dragStart, startPos
-                        
-                        screenButton.InputBegan:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-                                dragging = true
-                                dragStart = input.Position
-                                startPos = screenButton.Position
-                                
-                                input.Changed:Connect(function()
-                                    if input.UserInputState == Enum.UserInputState.End then
-                                        dragging = false
-                                    end
-                                end)
-                            end
-                        end)
-                        
-                        screenButton.InputChanged:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
-                                dragInput = input
-                            end
-                        end)
-                        
-                        mobileDragConn = UserInputService.InputChanged:Connect(function(input)
-                            if input == dragInput and dragging then
-                                local delta = input.Position - dragStart
-                                screenButton.Position = UDim2.new(
-                                    startPos.X.Scale, startPos.X.Offset + delta.X, 
-                                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                                )
+                        input.Changed:Connect(function()
+                            if input.UserInputState == Enum.UserInputState.End then
+                                dragging = false
                             end
                         end)
                     end
                 end)
-            else
-                BindButton.MouseButton1Down:Connect(function()
-                    closeModeDropdown()
-                    BindButton.Text = "..."
-                    BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    task.wait(0.1) 
-                    isListening = true
-                end)
-
-                local function checkMatch(input)
-                    if not currentBind then return false end
-                    if typeof(currentBind) == "EnumItem" and currentBind.EnumType == Enum.KeyCode then
-                        return input.KeyCode == currentBind
-                    elseif typeof(currentBind) == "EnumItem" and currentBind.EnumType == Enum.UserInputType then
-                        return input.UserInputType == currentBind
-                    end
-                    return false
-                end
-
-                UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-                    if isListening then
-                        local isKeyboard = (input.UserInputType == Enum.UserInputType.Keyboard)
-                        local isMouse = (input.UserInputType == Enum.UserInputType.MouseButton1 or 
-                                         input.UserInputType == Enum.UserInputType.MouseButton2 or 
-                                         input.UserInputType == Enum.UserInputType.MouseButton3)
-
-                        if isKeyboard or isMouse then
-                            if (isKeyboard and (input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace)) then
-                                currentBind = nil
-                                BindButton.Text = "None"
-                            else
-                                if isKeyboard then
-                                    currentBind = input.KeyCode
-                                    BindButton.Text = currentBind.Name
-                                else
-                                    currentBind = input.UserInputType
-                                    BindButton.Text = string.gsub(currentBind.Name, "MouseButton", "MB")
-                                end
-                            end
-                            BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
-                            isListening = false
-                        end
-                    else
-                        if not gameProcessedEvent and BindButton.Visible and checkMatch(input) then
-                            if bindMode == "Toggle" then
-                                FireToggle(false)
-                            elseif bindMode == "Hold" then
-                                SetToggleState(true)
-                            end
-                        end
+                
+                screenButton.InputChanged:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+                        dragInput = input
                     end
                 end)
-
-                UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
-                    if bindMode == "Hold" and BindButton.Visible and checkMatch(input) then
-                        SetToggleState(false)
+                
+                mobileDragConn = UserInputService.InputChanged:Connect(function(input)
+                    if input == dragInput and dragging then
+                        local delta = input.Position - dragStart
+                        screenButton.Position = UDim2.new(
+                            startPos.X.Scale, startPos.X.Offset + delta.X, 
+                            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                        )
                     end
                 end)
             end
+        end)
+    else
+        BindButton.MouseButton1Down:Connect(function()
+            closeModeDropdown()
+            BindButton.Text = "..."
+            BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            task.wait(0.1) 
+            isListening = true
+        end)
 
-            FireToggle(true)
-            ElementRegistry[togglename] = function(value)
-                SetToggleState(value)
+        local function checkMatch(input)
+            if not currentBind then return false end
+            if typeof(currentBind) == "EnumItem" and currentBind.EnumType == Enum.KeyCode then
+                return input.KeyCode == currentBind
+            elseif typeof(currentBind) == "EnumItem" and currentBind.EnumType == Enum.UserInputType then
+                return input.UserInputType == currentBind
             end
+            return false
         end
+
+        UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+            if isListening then
+                local isKeyboard = (input.UserInputType == Enum.UserInputType.Keyboard)
+                local isMouse = (input.UserInputType == Enum.UserInputType.MouseButton1 or 
+                                 input.UserInputType == Enum.UserInputType.MouseButton2 or 
+                                 input.UserInputType == Enum.UserInputType.MouseButton3)
+
+                if isKeyboard or isMouse then
+                    if (isKeyboard and (input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace)) then
+                        currentBind = nil
+                    else
+                        currentBind = isKeyboard and input.KeyCode or input.UserInputType
+                    end
+                    UpdateBindButtonText()
+                    BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+                    isListening = false
+                    UpdateConfigsState()
+                end
+            else
+                if not gameProcessedEvent and BindButton.Visible and checkMatch(input) then
+                    if bindMode == "Toggle" then
+                        FireToggle(false)
+                    elseif bindMode == "Hold" then
+                        SetToggleState(true)
+                    end
+                end
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+            if bindMode == "Hold" and BindButton.Visible and checkMatch(input) then
+                SetToggleState(false)
+            end
+        end)
+    end
+
+    FireToggle(true)
+
+    -- FIX: Rebuilt registry loader to safely read string variations or dictionaries
+    ElementRegistry[togglename] = function(value)
+        if typeof(value) == "table" then
+            bindMode = value.BindMode or "Toggle"
+            ModeButton.Text = bindMode
+            
+            if value.Keybind and value.Keybind ~= "None" then
+                local token = string.split(value.Keybind, ".")
+                local enumType = token[2]
+                local enumName = token[3]
+                if enumType and enumName and Enum[enumType] and Enum[enumType][enumName] then
+                    currentBind = Enum[enumType][enumName]
+                else
+                    currentBind = nil
+                end
+            else
+                currentBind = nil
+            end
+            UpdateBindButtonText()
+            SetToggleState(value.State)
+        else
+            SetToggleState(value)
+        end
+    end
+end
 
         function PageElements:addSlider(slidername,minvalue,maxvalue,callback)
-            local SliderHolder = Instance.new("Frame")
-            local SliderTitle = Instance.new("TextLabel")
-            local SliderHolderScript = Instance.new("UICorner")
-            local SliderButton = Instance.new("TextButton")
-            local SliderButtonCorner = Instance.new("UICorner")
-            local SliderTrail = Instance.new("Frame")
-            local SliderTrailCorner = Instance.new("UICorner")
-            local SliderNumber = Instance.new("TextBox") 
+    local SliderHolder = Instance.new("Frame")
+    local SliderTitle = Instance.new("TextLabel")
+    local SliderHolderScript = Instance.new("UICorner")
+    local SliderButton = Instance.new("TextButton")
+    local SliderButtonCorner = Instance.new("UICorner")
+    local SliderTrail = Instance.new("Frame")
+    local SliderTrailCorner = Instance.new("UICorner")
+    local SliderNumber = Instance.new("TextBox") 
 
-            local callback = callback or function() end
-            local min = tonumber(minvalue) or 0
-            local max = tonumber(maxvalue) or 100
+    local callback = callback or function() end
+    local min = tonumber(minvalue) or 0
+    local max = tonumber(maxvalue) or 100
 
-            SliderHolder.Name = "SliderHolder"
-            SliderHolder.Parent = Home
-            SliderHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            SliderHolder.BorderColor3 = Color3.fromRGB(17, 16, 16)
-            SliderHolder.BorderSizePixel = 0
-            SliderHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
-            SliderHolder.Size = UDim2.new(0, 288, 0, 26)
-            
-            SliderTitle.Name = "SliderTitle"
-            SliderTitle.Parent = SliderHolder
-            SliderTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            SliderTitle.BackgroundTransparency = 1.000
-            SliderTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
-            SliderTitle.BorderSizePixel = 0
-            SliderTitle.Position = UDim2.new(0.024305556, 0, 0.15384616, 0)
-            SliderTitle.Size = UDim2.new(0, 239, 0, 8)
-            SliderTitle.Font = Enum.Font.GothamSemibold
-            SliderTitle.Text = slidername
-            SliderTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-            SliderTitle.TextSize = 11.000
-            SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
-            
-            SliderHolderScript.CornerRadius = UDim.new(0, 5)
-            SliderHolderScript.Name = "SliderHolderScript"
-            SliderHolderScript.Parent = SliderHolder
-            
-            SliderButton.Name = "SliderButton"
-            SliderButton.Parent = SliderHolder
-            SliderButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-            SliderButton.BorderColor3 = Color3.fromRGB(15, 15, 15)
-            SliderButton.BorderSizePixel = 0
-            SliderButton.Position = UDim2.new(0, 8, 0, 17)
-            SliderButton.Size = UDim2.new(0, 273, 0, 7)
-            SliderButton.AutoButtonColor = false
-            SliderButton.Font = Enum.Font.SourceSans
-            SliderButton.Text = ""
-            SliderButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-            SliderButton.TextSize = 14.000
-            
-            SliderButtonCorner.Name = "SliderButtonCorner"
-            SliderButtonCorner.Parent = SliderButton
-            
-            SliderTrail.Name = "SliderTrail"
-            SliderTrail.Parent = SliderButton
-            SliderTrail.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            SliderTrail.BorderColor3 = Color3.fromRGB(40, 40, 40)
-            SliderTrail.Size = UDim2.new(0, 10, 0, 7)
-            
-            SliderTrailCorner.Name = "SliderTrailCorner"
-            SliderTrailCorner.Parent = SliderTrail
-            
-            SliderNumber.Name = "SliderNumber"
-            SliderNumber.Parent = SliderHolder
-            SliderNumber.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            SliderNumber.BackgroundTransparency = 1.000
-            SliderNumber.BorderColor3 = Color3.fromRGB(17, 17, 17)
-            SliderNumber.BorderSizePixel = 0
-            SliderNumber.Position = UDim2.new(0.85, 0, 0.05, 0) 
-            SliderNumber.Size = UDim2.new(0, 38, 0, 12)
-            SliderNumber.Font = Enum.Font.GothamSemibold
-            SliderNumber.Text = tostring(min)
-            SliderNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
-            SliderNumber.TextSize = 10.000
-            SliderNumber.TextXAlignment = Enum.TextXAlignment.Right 
-            SliderNumber.ClearTextOnFocus = false                    
-            SliderNumber.TextEditable = true
+    SliderHolder.Name = "SliderHolder"
+    SliderHolder.Parent = Home
+    SliderHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    SliderHolder.BorderColor3 = Color3.fromRGB(17, 16, 16)
+    SliderHolder.BorderSizePixel = 0
+    SliderHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
+    SliderHolder.Size = UDim2.new(0, 288, 0, 26)
+    
+    SliderTitle.Name = "SliderTitle"
+    SliderTitle.Parent = SliderHolder
+    SliderTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    SliderTitle.BackgroundTransparency = 1.000
+    SliderTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
+    SliderTitle.BorderSizePixel = 0
+    SliderTitle.Position = UDim2.new(0.024305556, 0, 0.15384616, 0)
+    SliderTitle.Size = UDim2.new(0, 239, 0, 8)
+    SliderTitle.Font = Enum.Font.GothamSemibold
+    SliderTitle.Text = slidername
+    SliderTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SliderTitle.TextSize = 11.000
+    SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    SliderHolderScript.CornerRadius = UDim.new(0, 5)
+    SliderHolderScript.Name = "SliderHolderScript"
+    SliderHolderScript.Parent = SliderHolder
+    
+    SliderButton.Name = "SliderButton"
+    SliderButton.Parent = SliderHolder
+    SliderButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+    SliderButton.BorderColor3 = Color3.fromRGB(15, 15, 15)
+    SliderButton.BorderSizePixel = 0
+    SliderButton.Position = UDim2.new(0, 8, 0, 17)
+    SliderButton.Size = UDim2.new(0, 273, 0, 7)
+    SliderButton.AutoButtonColor = false
+    SliderButton.Font = Enum.Font.SourceSans
+    SliderButton.Text = ""
+    SliderButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    SliderButton.TextSize = 14.000
+    
+    SliderButtonCorner.Name = "SliderButtonCorner"
+    SliderButtonCorner.Parent = SliderButton
+    
+    SliderTrail.Name = "SliderTrail"
+    SliderTrail.Parent = SliderButton
+    SliderTrail.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    SliderTrail.BorderColor3 = Color3.fromRGB(40, 40, 40)
+    SliderTrail.Size = UDim2.new(0, 10, 0, 7)
+    
+    SliderTrailCorner.Name = "SliderTrailCorner"
+    SliderTrailCorner.Parent = SliderTrail
+    
+    SliderNumber.Name = "SliderNumber"
+    SliderNumber.Parent = SliderHolder
+    SliderNumber.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    SliderNumber.BackgroundTransparency = 1.000
+    SliderNumber.BorderColor3 = Color3.fromRGB(17, 17, 17)
+    SliderNumber.BorderSizePixel = 0
+    SliderNumber.Position = UDim2.new(0.85, 0, 0.05, 0) 
+    SliderNumber.Size = UDim2.new(0, 38, 0, 12)
+    SliderNumber.Font = Enum.Font.GothamSemibold
+    SliderNumber.Text = tostring(min)
+    SliderNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SliderNumber.TextSize = 10.000
+    SliderNumber.TextXAlignment = Enum.TextXAlignment.Right 
+    SliderNumber.ClearTextOnFocus = false                    
+    SliderNumber.TextEditable = true
 
-            local mouse = game.Players.LocalPlayer:GetMouse()
-            local uis = game:GetService("UserInputService")
-            local Value;
-            local moveconnection, releaseconnection
+    local mouse = game.Players.LocalPlayer:GetMouse()
+    local uis = game:GetService("UserInputService")
+    local Value;
+    local moveconnection, releaseconnection
 
-            SliderButton.MouseButton1Down:Connect(function()
-                Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min) or 0
-                callback(SliderNumber.Text)
+    -- FIX: Forces configuration updates in the dragging process loop
+    local function updateSliderFromTrack()
+        Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
+        SliderNumber.Text = tostring(Value)
+        LibraryConfigs[slidername] = Value
+        pcall(callback, SliderNumber.Text)
+    end
+
+    SliderButton.MouseButton1Down:Connect(function()
+        SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
+        updateSliderFromTrack()
+        
+        moveconnection = mouse.Move:Connect(function()
+            SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
+            SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
+            updateSliderFromTrack()
+        end)
+        
+        releaseconnection = uis.InputEnded:Connect(function(Mouse)
+            if Mouse.UserInputType == Enum.UserInputType.MouseButton1 then
+                SliderHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
                 SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
-                
-                moveconnection = mouse.Move:Connect(function()
-                    SliderNumber.Text = tostring(Value)
-                    Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-                    callback(SliderNumber.Text)
-                    SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
-                    SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
-                end)
-                
-                releaseconnection = uis.InputEnded:Connect(function(Mouse)
-                    if Mouse.UserInputType == Enum.UserInputType.MouseButton1 then
-                        Value = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-                        callback(SliderNumber.Text)
-                        SliderHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
-                        SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderButton.AbsolutePosition.X, 0, 273), 0, 7)
-                        if moveconnection then moveconnection:Disconnect() end
-                        if releaseconnection then releaseconnection:Disconnect() end
-                    end
-                end)
-            end)
-
-            SliderNumber.FocusLost:Connect(function(enterPressed)
-                local inputVal = tonumber(SliderNumber.Text)
-                if not inputVal then
-                    inputVal = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
-                end
-                inputVal = math.clamp(inputVal, min, max)
-                SliderNumber.Text = tostring(inputVal)
-                
-                local percentage = (inputVal - min) / (max - min)
-                if max == min then percentage = 0 end 
-                
-                SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
-                callback(SliderNumber.Text)
-                LibraryConfigs[slidername] = tonumber(SliderNumber.Text)
-            end)
-            ElementRegistry[slidername] = function(value)
-                local inputVal = math.clamp(tonumber(value) or min, min, max)
-                SliderNumber.Text = tostring(inputVal)
-                LibraryConfigs[slidername] = inputVal
-                
-                local percentage = (inputVal - min) / (max - min)
-                if max == min then percentage = 0 end 
-                
-                SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
-                pcall(callback, SliderNumber.Text)
+                updateSliderFromTrack()
+                if moveconnection then moveconnection:Disconnect() end
+                if releaseconnection then releaseconnection:Disconnect() end
             end
+        end)
+    end)
+
+    SliderNumber.FocusLost:Connect(function(enterPressed)
+        local inputVal = tonumber(SliderNumber.Text)
+        if not inputVal then
+            inputVal = math.floor((((max - min) / 273) * SliderTrail.AbsoluteSize.X) + min)
         end
+        inputVal = math.clamp(inputVal, min, max)
+        SliderNumber.Text = tostring(inputVal)
+        
+        local percentage = (inputVal - min) / (max - min)
+        if max == min then percentage = 0 end 
+        
+        SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
+        LibraryConfigs[slidername] = inputVal
+        pcall(callback, SliderNumber.Text)
+    end)
+
+    ElementRegistry[slidername] = function(value)
+        local inputVal = math.clamp(tonumber(value) or min, min, max)
+        SliderNumber.Text = tostring(inputVal)
+        LibraryConfigs[slidername] = inputVal
+        
+        local percentage = (inputVal - min) / (max - min)
+        if max == min then percentage = 0 end 
+        
+        SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
+        pcall(callback, SliderNumber.Text)
+    end
+end
 
         function PageElements:addTextBox(textboxname,textboxdefault,callback)
             local TextBoxHolder = Instance.new("Frame")
