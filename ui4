@@ -1299,6 +1299,18 @@ end
             DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
             DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
             
+            -- FIX: Centralized close layout function to force clean visual resets
+            local function CloseDropdownVisuals()
+                DropDownEnabled = false
+                DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
+                DropdownOptionContainer.Visible = false
+                DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
+                DropdownContainer.Visible = false
+                DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
+                makeelements(true, DropdownHolder)
+            end
+
             DropdownButton.MouseButton1Down:Connect(function()
                 if DropDownEnabled == false then 
                     DropDownEnabled = true
@@ -1314,18 +1326,7 @@ end
                     DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1) 
                     DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)
                 else
-                    DropDownEnabled = false
-                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
-                    task.wait(0.2)
-                    DropdownOptionContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
-                    task.wait(0.3)
-                    makeelements(true, DropdownHolder)
-                    DropdownContainer.Visible = false
-                    task.wait(0.09)
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) 
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) 
+                    CloseDropdownVisuals()
                 end
             end)	
 
@@ -1343,7 +1344,6 @@ end
                 pcall(callback, v)
             end
 
-            -- FIX: Isolated button creation into a standalone function so we can refresh dynamically
             local function AddOptionsToList(currentList)
                 for i,v in pairs(currentList) do  
                     local Option = Instance.new("TextButton")
@@ -1374,38 +1374,23 @@ end
                     end)
 
                     Option.MouseButton1Down:Connect(function()
-                        DropDownEnabled = false
-                        DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
-                        DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
-                        task.wait(0.2)
-                        DropdownOptionContainer.Visible = false
-                        DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
-                        
                         SelectValue(v)
-                        
-                        task.wait(0.3)
-                        makeelements(true, DropdownHolder)
-                        DropdownContainer.Visible = false
-                        DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) 
-                        DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) 
+                        CloseDropdownVisuals() -- FIX: Closes layout gracefully when option is selected manually
                     end)
                 end
             end
 
-            -- Build baseline layout options
             AddOptionsToList(list)
 
-            -- FIX: The registry entry can now parse standard loading value assignments OR clean layout reloads
             ElementRegistry[dropdownname] = function(value)
                 if typeof(value) == "table" and value.Type == "RefreshDropdown" then
-                    -- Wipe prior layout models
                     for _, child in pairs(DropdownOptionContainer:GetChildren()) do
                         if child:IsA("TextButton") then child:Destroy() end
                     end
-                    -- Build fresh file strings
                     AddOptionsToList(value.List)
                 else
                     SelectValue(value)
+                    CloseDropdownVisuals() -- FIX: Ensures loading configuration files doesn't leave panels open
                 end
             end
         end
