@@ -647,6 +647,7 @@ function Library:CreateWindow(windowname,windowinfo)
             ModeDropdownPanel.Position = hasColorPicker and UDim2.new(0.59, 0, 0, 24) or UDim2.new(0.67, 0, 0, 24)
             ModeDropdownPanel.Size = UDim2.new(0, 42, 0, 36)
             ModeDropdownPanel.Visible = false
+            ModeDropdownPanel.ZIndex = 5
             
             local ModePanelCorner = Instance.new("UICorner")
             ModePanelCorner.CornerRadius = UDim.new(0, 4)
@@ -675,14 +676,12 @@ function Library:CreateWindow(windowname,windowinfo)
             closeModeDropdown = function()
                 isModeOpen = false
                 ModeDropdownPanel.Visible = false
-                makeelements(true, ToggleHolder) -- Restores other layout elements
             end
 
             ModeButton.MouseButton1Down:Connect(function()
                 if closeColorPanel then closeColorPanel() end
                 isModeOpen = not isModeOpen
                 ModeDropdownPanel.Visible = isModeOpen
-                makeelements(not isModeOpen, ToggleHolder) -- Hides other layout elements when open
             end)
 
             ModeToggleOpt.MouseButton1Down:Connect(function()
