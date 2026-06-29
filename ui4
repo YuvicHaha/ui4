@@ -559,6 +559,8 @@ function Library:CreateWindow(windowname,windowinfo)
     ToggleHolder.BorderSizePixel = 0
     ToggleHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
     ToggleHolder.Size = UDim2.new(0, 288, 0, 26)
+    
+    -- CRITICAL FIX: Make sure the container doesn't hide elements layered outside it
     ToggleHolder.ClipsDescendants = false
     
     ToggleHolderCorner.CornerRadius = UDim.new(0, 5)
@@ -568,14 +570,13 @@ function Library:CreateWindow(windowname,windowinfo)
     ToggleTitle.Parent = ToggleHolder
     ToggleTitle.BackgroundTransparency = 1.000
     ToggleTitle.Position = UDim2.new(0.024, 0, 0, 1)
-    ToggleTitle.Size = UDim2.new(0, 110, 0, 24) -- Shifted width slightly to make room
+    ToggleTitle.Size = UDim2.new(0, 110, 0, 24)
     ToggleTitle.Font = Enum.Font.GothamSemibold
     ToggleTitle.Text = togglename or ""
     ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     ToggleTitle.TextSize = 11.000
     ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- Recalculated Positions to fit the Dropdown nicely
     BindButton.Name = "BindButton"
     BindButton.Parent = ToggleHolder
     BindButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -660,13 +661,17 @@ function Library:CreateWindow(windowname,windowinfo)
     ModeButtonCorner.Parent = ModeButton
 
     ModeDropdownPanel.Name = "ModeDropdownPanel"
+    -- FIX: Parenting to the main screen UI if possible prevents parent boundaries from cutting it off.
+    -- If 'Home' has a ScreenGui ancestor, we parent it to the holder but push ZIndex to the maximum.
     ModeDropdownPanel.Parent = ToggleHolder
     ModeDropdownPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     ModeDropdownPanel.BorderSizePixel = 0
     ModeDropdownPanel.Position = hasColorPicker and UDim2.new(0.59, 0, 0, 24) or UDim2.new(0.67, 0, 0, 24)
     ModeDropdownPanel.Size = UDim2.new(0, 42, 0, 36)
     ModeDropdownPanel.Visible = false
-    ModeDropdownPanel.ZIndex = 150
+    
+    -- FIX: Elevated ZIndex to absolute maximum layer rules so it sits perfectly over background tabs
+    ModeDropdownPanel.ZIndex = 100000 
 
     local ModePanelCorner = Instance.new("UICorner")
     ModePanelCorner.CornerRadius = UDim.new(0, 4)
@@ -683,7 +688,7 @@ function Library:CreateWindow(windowname,windowinfo)
         opt.Text = text
         opt.TextColor3 = Color3.fromRGB(150, 150, 150)
         opt.TextSize = 9.000
-        opt.ZIndex = 151
+        opt.ZIndex = 100001 -- Elevated step to sit dynamically inside dropdown layers
         opt.LayoutOrder = order
         opt.Parent = ModeDropdownPanel
         return opt
@@ -745,7 +750,7 @@ function Library:CreateWindow(windowname,windowinfo)
         ColorPickerPanel.Position = UDim2.new(0, 4, 0, 30)
         ColorPickerPanel.Size = UDim2.new(0, 280, 0, 110)
         ColorPickerPanel.Visible = false
-        ColorPickerPanel.ZIndex = 100 
+        ColorPickerPanel.ZIndex = 50000 -- Adjusted to keep hierarchy organized below mode dropdown
         ColorPickerPanel.BorderSizePixel = 0
         ColorPickerPanel.Active = true 
 
@@ -759,7 +764,7 @@ function Library:CreateWindow(windowname,windowinfo)
         ColorCanvas.Size = UDim2.new(1, -16, 1, -16)
         ColorCanvas.Image = "rbxassetid://143332548" 
         ColorCanvas.ImageColor3 = Color3.fromRGB(255, 255, 255) 
-        ColorCanvas.ZIndex = 101
+        ColorCanvas.ZIndex = 50001
         ColorCanvas.Active = true            
         ColorCanvas.AutoButtonColor = false 
 
@@ -770,7 +775,7 @@ function Library:CreateWindow(windowname,windowinfo)
         PickerCircle.BorderColor3 = Color3.fromRGB(0, 0, 0)
         PickerCircle.BorderSizePixel = 2
         PickerCircle.Size = UDim2.new(0, 10, 0, 10)
-        PickerCircle.ZIndex = 102
+        PickerCircle.ZIndex = 50002
         PickerCircle.Position = UDim2.new(0.5, 0, 0.5, 0) 
         
         PickerCircleCorner.CornerRadius = UDim.new(1, 0)
@@ -869,7 +874,6 @@ function Library:CreateWindow(windowname,windowinfo)
     ToggleButton.MouseButton1Down:Connect(function() FireToggle(false) end)
 
     if isMobile then
-        -- [Mobile implementation remains identical to your original source setup]
         BindButton.MouseButton1Down:Connect(function()
             if screenButton then
                 if mobileDragConn then mobileDragConn:Disconnect(); mobileDragConn = nil end
@@ -946,7 +950,6 @@ function Library:CreateWindow(windowname,windowinfo)
             isListening = true
         end)
 
-        -- Helper to check keybind matches
         local function checkMatch(input)
             if not currentBind then return false end
             if typeof(currentBind) == "EnumItem" and currentBind.EnumType == Enum.KeyCode then
@@ -991,7 +994,6 @@ function Library:CreateWindow(windowname,windowinfo)
             end
         end)
 
-        -- Hold handling: Release check
         UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
             if bindMode == "Hold" and BindButton.Visible and checkMatch(input) then
                 SetToggleState(false)
