@@ -676,12 +676,18 @@ function Library:CreateWindow(windowname,windowinfo)
             closeModeDropdown = function()
                 isModeOpen = false
                 ModeDropdownPanel.Visible = false
+                ToggleHolder.ZIndex = 1
             end
 
             ModeButton.MouseButton1Down:Connect(function()
                 if closeColorPanel then closeColorPanel() end
                 isModeOpen = not isModeOpen
                 ModeDropdownPanel.Visible = isModeOpen
+                if isModeOpen then
+                    ToggleHolder.ZIndex = 3
+                else
+                    ToggleHolder.ZIndex = 1
+                end
             end)
 
             ModeToggleOpt.MouseButton1Down:Connect(function()
