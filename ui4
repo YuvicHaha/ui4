@@ -8,6 +8,9 @@ end
 DestroyYep()
 
 task.wait(0.069)
+local HttpService = game:GetService("HttpService")
+local LibraryConfigs = {}   -- Keeps track of settings values
+local ElementRegistry = {}  -- Keeps track of UI functions so we can force-change them
 
 local Library = {}
 
@@ -829,7 +832,9 @@ function Library:CreateWindow(windowname,windowinfo)
 
             local function SetToggleState(newState)
                 ToggleEnabled = newState
+                LibraryConfigs[togglename] = ToggleEnabled
                 local targetX = ToggleEnabled and 0.455 or 0.123
+                
                 ToggleBall:TweenPosition(UDim2.new(targetX, 0, 0, 3.5), "Out", "Linear", 0.1, true)
                 
                 if not ToggleEnabled and closeColorPanel then
@@ -979,6 +984,9 @@ function Library:CreateWindow(windowname,windowinfo)
             end
 
             FireToggle(true)
+            ElementRegistry[togglename] = function(value)
+                SetToggleState(value)
+            end
         end
 
         function PageElements:addSlider(slidername,minvalue,maxvalue,callback)
@@ -1105,7 +1113,19 @@ function Library:CreateWindow(windowname,windowinfo)
                 
                 SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
                 callback(SliderNumber.Text)
+                LibraryConfigs[slidername] = tonumber(SliderNumber.Text)
             end)
+            ElementRegistry[slidername] = function(value)
+                local inputVal = math.clamp(tonumber(value) or min, min, max)
+                SliderNumber.Text = tostring(inputVal)
+                LibraryConfigs[slidername] = inputVal
+                
+                local percentage = (inputVal - min) / (max - min)
+                if max == min then percentage = 0 end 
+                
+                SliderTrail.Size = UDim2.new(0, math.clamp(percentage * 273, 0, 273), 0, 7)
+                pcall(callback, SliderNumber.Text)
+            end
         end
 
         function PageElements:addTextBox(textboxname,textboxdefault,callback)
@@ -1345,5 +1365,33 @@ function Library:CreateWindow(windowname,windowinfo)
         return PageElements
     end
     return PageYep
+end
+function Library:SaveConfig(filename)
+    filename = filename or "default_config.json"
+    if writefile then
+        local success, jsonString = pcall(function()
+            return HttpService:JSONEncode(LibraryConfigs)
+        end)
+        if success then
+            writefile(filename, jsonString)
+            print("Saved: " .. filename)
+        end
+    end
+end
+
+function Library:LoadConfig(filename)
+    filename = filename or "default_config.json"
+    if readfile and isfile and isfile(filename) then
+        local success, jsonString = pcall(function() return readfile(filename) end)
+        if success then
+            local data = HttpService:JSONDecode(jsonString)
+            for elementName, value in pairs(data) do
+                if ElementRegistry[elementName] then
+                    pcall(ElementRegistry[elementName], value)
+                end
+            end
+            print("Loaded: " .. filename)
+        end
+    end
 end
 return Library
