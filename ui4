@@ -1207,206 +1207,238 @@ end
             end)
         end
 
-        function PageElements:addDropdown(dropdownname,list,scrollsize,callback)
-            local DropdownHolder = Instance.new("Frame")
-            local DropdownHolderCorner = Instance.new("UICorner")
-            local DropdownTitle = Instance.new("TextLabel")
-            local DropdownButton = Instance.new("TextButton")
-            local DropdownIcon = Instance.new("ImageLabel")
-            local DropdownContainer = Instance.new("Frame")
-            local DropdownContainerCorner = Instance.new("UICorner")
-            local DropdownOptionContainer = Instance.new("ScrollingFrame")
-            local DropdownOptionContainerLayout = Instance.new("UIListLayout")
+        function PageElements:addDropdown(dropdownname, list, scrollsize, options, callback)
+    -- Handle cases where 'options' is omitted and the 4th argument is the callback
+    if type(options) == "function" then
+        callback = options
+        options = {}
+    end
+    
+    options = options or {}
+    local isMulti = options.Multi or false
+    local selectedItems = {} -- Tracks active choices if Multi is true
 
-            local callback = callback or function() end
-            local DropDownEnabled = false
+    local DropdownHolder = Instance.new("Frame")
+    local DropdownHolderCorner = Instance.new("UICorner")
+    local DropdownTitle = Instance.new("TextLabel")
+    local DropdownButton = Instance.new("TextButton")
+    local DropdownIcon = Instance.new("ImageLabel")
+    local DropdownContainer = Instance.new("Frame")
+    local DropdownContainerCorner = Instance.new("UICorner")
+    local DropdownOptionContainer = Instance.new("ScrollingFrame")
+    local DropdownOptionContainerLayout = Instance.new("UIListLayout")
 
-            DropdownHolder.Name = "DropdownHolder"
-            DropdownHolder.Parent = Home
-            DropdownHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownHolder.BorderColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownHolder.BorderSizePixel = 0
-            DropdownHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
-            DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
-            
-            DropdownHolderCorner.CornerRadius = UDim.new(0, 5)
-            DropdownHolderCorner.Name = "DropdownHolderCorner"
-            DropdownHolderCorner.Parent = DropdownHolder
-            
-            DropdownTitle.Name = "DropdownTitle"
-            DropdownTitle.Parent = DropdownHolder
-            DropdownTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownTitle.BackgroundTransparency = 1.000
-            DropdownTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownTitle.BorderSizePixel = 0
-            DropdownTitle.Position = UDim2.new(0.024305556, 0, 0, 0)
-            DropdownTitle.Size = UDim2.new(0, 195, 0, 24)
-            DropdownTitle.Font = Enum.Font.GothamSemibold
-            DropdownTitle.Text = dropdownname
-            DropdownTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-            DropdownTitle.TextSize = 11.000
-            DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
-            
-            DropdownButton.Name = "DropdownButton"
-            DropdownButton.Parent = DropdownHolder
-            DropdownButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            DropdownButton.BackgroundTransparency = 1.000
-            DropdownButton.Size = UDim2.new(0, 288, 0, 26)
-            DropdownButton.Font = Enum.Font.SourceSans
-            DropdownButton.Text = ""
-            DropdownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-            DropdownButton.TextSize = 14.000
-            
-            DropdownIcon.Name = "DropdownIcon"
-            DropdownIcon.Parent = DropdownButton
-            DropdownIcon.BackgroundTransparency = 1.000
-            DropdownIcon.Position = UDim2.new(0.885416687, 0, 0.192307711, 0)
-            DropdownIcon.Size = UDim2.new(0, 24, 0, 16)
-            DropdownIcon.Image = "rbxassetid://3944690667"
-            DropdownIcon.ScaleType = Enum.ScaleType.Fit
-            
-            DropdownContainer.Name = "DropdownContainer"
-            DropdownContainer.Parent = DropdownHolder
-            DropdownContainer.Active = true
-            DropdownContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownContainer.BorderSizePixel = 0
-            DropdownContainer.ClipsDescendants = true
-            DropdownContainer.Position = UDim2.new(0, 0, 1.34615386, 0)
-            DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
-            DropdownContainer.Visible = false
-            
-            DropdownContainerCorner.CornerRadius = UDim.new(0, 6)
-            DropdownContainerCorner.Name = "DropdownContainerCorner"
-            DropdownContainerCorner.Parent = DropdownContainer
-            
-            DropdownOptionContainer.Name = "DropdownOptionContainer"
-            DropdownOptionContainer.Parent = DropdownContainer
-            DropdownOptionContainer.Active = true
-            DropdownOptionContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownOptionContainer.BackgroundTransparency = 1.000
-            DropdownOptionContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
-            DropdownOptionContainer.BorderSizePixel = 0
-            DropdownOptionContainer.Position = UDim2.new(0, 0, 0.0782608688, 0)
-            DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
-            DropdownOptionContainer.Visible = false
-            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0,scrollsize or 5, 0)
-            DropdownOptionContainer.ScrollBarThickness = 3
-            
-            DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
-            DropdownOptionContainerLayout.Parent = DropdownOptionContainer
-            DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-            DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
-            
-            local function CloseDropdownVisuals()
-                DropDownEnabled = false
-                DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
-                DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
-                DropdownOptionContainer.Visible = false
-                DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
-                DropdownContainer.Visible = false
-                DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
-                makeelements(true, DropdownHolder)
+    local callback = callback or function() end
+    local DropDownEnabled = false
+
+    DropdownHolder.Name = "DropdownHolder"
+    DropdownHolder.Parent = Home
+    DropdownHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownHolder.BorderColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownHolder.BorderSizePixel = 0
+    DropdownHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
+    DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
+    
+    DropdownHolderCorner.CornerRadius = UDim.new(0, 5)
+    DropdownHolderCorner.Name = "DropdownHolderCorner"
+    DropdownHolderCorner.Parent = DropdownHolder
+    
+    DropdownTitle.Name = "DropdownTitle"
+    DropdownTitle.Parent = DropdownHolder
+    DropdownTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownTitle.BackgroundTransparency = 1.000
+    DropdownTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownTitle.BorderSizePixel = 0
+    DropdownTitle.Position = UDim2.new(0.024305556, 0, 0, 0)
+    DropdownTitle.Size = UDim2.new(0, 195, 0, 24)
+    DropdownTitle.Font = Enum.Font.GothamSemibold
+    DropdownTitle.Text = dropdownname
+    DropdownTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DropdownTitle.TextSize = 11.000
+    DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    DropdownButton.Name = "DropdownButton"
+    DropdownButton.Parent = DropdownHolder
+    DropdownButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    DropdownButton.BackgroundTransparency = 1.000
+    DropdownButton.Size = UDim2.new(0, 288, 0, 26)
+    DropdownButton.Font = Enum.Font.SourceSans
+    DropdownButton.Text = ""
+    DropdownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    DropdownButton.TextSize = 14.000
+    
+    DropdownIcon.Name = "DropdownIcon"
+    DropdownIcon.Parent = DropdownButton
+    DropdownIcon.BackgroundTransparency = 1.000
+    DropdownIcon.Position = UDim2.new(0.885416687, 0, 0.192307711, 0)
+    DropdownIcon.Size = UDim2.new(0, 24, 0, 16)
+    DropdownIcon.Image = "rbxassetid://3944690667"
+    DropdownIcon.ScaleType = Enum.ScaleType.Fit
+    
+    DropdownContainer.Name = "DropdownContainer"
+    DropdownContainer.Parent = DropdownHolder
+    DropdownContainer.Active = true
+    DropdownContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownContainer.BorderSizePixel = 0
+    DropdownContainer.ClipsDescendants = true
+    DropdownContainer.Position = UDim2.new(0, 0, 1.34615386, 0)
+    DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
+    DropdownContainer.Visible = false
+    
+    DropdownContainerCorner.CornerRadius = UDim.new(0, 6)
+    DropdownContainerCorner.Name = "DropdownContainerCorner"
+    DropdownContainerCorner.Parent = DropdownContainer
+    
+    DropdownOptionContainer.Name = "DropdownOptionContainer"
+    DropdownOptionContainer.Parent = DropdownContainer
+    DropdownOptionContainer.Active = true
+    DropdownOptionContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownOptionContainer.BackgroundTransparency = 1.000
+    DropdownOptionContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
+    DropdownOptionContainer.BorderSizePixel = 0
+    DropdownOptionContainer.Position = UDim2.new(0, 0, 0.0782608688, 0)
+    DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
+    DropdownOptionContainer.Visible = false
+    DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, scrollsize or 5, 0)
+    DropdownOptionContainer.ScrollBarThickness = 3
+    
+    DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
+    DropdownOptionContainerLayout.Parent = DropdownOptionContainer
+    DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
+    
+    local function CloseDropdownVisuals()
+        DropDownEnabled = false
+        DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+        DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
+        DropdownOptionContainer.Visible = false
+        DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
+        DropdownContainer.Visible = false
+        DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
+        makeelements(true, DropdownHolder)
+    end
+
+    DropdownButton.MouseButton1Down:Connect(function()
+        if DropDownEnabled == false then 
+            DropDownEnabled = true
+            makeelements(false, DropdownHolder)
+            DropdownContainer.Visible = true
+            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 115), "Out", "Linear", 0.3)
+            DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
+            task.wait(0.3)
+            DropdownOptionContainer.Visible = true
+            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 106), "Out", "Linear", 0.2)
+            task.wait(0.09)
+            Home.CanvasPosition = Vector2.new(0, 0)
+            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 115), "Out", "Linear", 0.1) 
+            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 106), "Out", "Linear", 0.1)
+        else
+            CloseDropdownVisuals()
+        end
+    end)	
+
+    local function SelectValue(v)
+        if isMulti then
+            if table.find(selectedItems, v) then
+                table.remove(selectedItems, table.find(selectedItems, v))
+            else
+                table.insert(selectedItems, v)
             end
+            LibraryConfigs[dropdownname] = selectedItems
+        else
+            selectedItems = {v}
+            LibraryConfigs[dropdownname] = v
+        end
 
-            DropdownButton.MouseButton1Down:Connect(function()
-                if DropDownEnabled == false then 
-                    DropDownEnabled = true
-                    makeelements(false, DropdownHolder)
-                    DropdownContainer.Visible = true
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.3)
-                    DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
-                    task.wait(0.3)
-                    DropdownOptionContainer.Visible = true
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.2)
-                    task.wait(0.09)
-                    Home.CanvasPosition = Vector2.new(0,0)
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1) 
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)
+        for _, opt in pairs(DropdownOptionContainer:GetChildren()) do
+            if opt:IsA("TextButton") then
+                if table.find(selectedItems, opt.Text) then
+                    opt.TextColor3 = Color3.fromRGB(137, 246, 255)
                 else
-                    CloseDropdownVisuals()
-                end
-            end)	
-
-            local function SelectValue(v)
-                LibraryConfigs[dropdownname] = v
-                for _, opt in pairs(DropdownOptionContainer:GetChildren()) do
-                    if opt:IsA("TextButton") then
-                        if opt.Text == v then
-                            opt.TextColor3 = Color3.fromRGB(137, 246, 255)
-                        else
-                            opt.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        end
-                    end
-                end
-                pcall(callback, v)
-            end
-
-            local function AddOptionsToList(currentList)
-                for i,v in pairs(currentList) do  
-                    local Option = Instance.new("TextButton")
-                    local OptionCorner = Instance.new("UICorner")
-
-                    Option.Name = "Option"
-                    Option.Parent = DropdownOptionContainer
-                    Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-                    Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
-                    Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
-                    Option.Size = UDim2.new(0, 283, 0, 22)
-                    Option.AutoButtonColor = false
-                    Option.Font = Enum.Font.GothamSemibold
-                    Option.Text = v
-                    Option.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    Option.TextSize = 10.000
-                    
-                    OptionCorner.CornerRadius = UDim.new(0, 6)
-                    OptionCorner.Name = "OptionCorner"
-                    OptionCorner.Parent = Option
-
-                    Option.MouseEnter:Connect(function()
-                        Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
-                    end)
-                    
-                    Option.MouseLeave:Connect(function()
-                        Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
-                    end)
-
-                    Option.MouseButton1Down:Connect(function()
-                        SelectValue(v)
-                        CloseDropdownVisuals()
-                    end)
-                end
-            end
-
-            AddOptionsToList(list)
-
-            ElementRegistry[dropdownname] = function(value)
-                if typeof(value) == "table" and value.Type == "RefreshDropdown" then
-                    -- 1. Wipe the old UI option instances
-                    for _, child in pairs(DropdownOptionContainer:GetChildren()) do
-                        if child:IsA("TextButton") then child:Destroy() end
-                    end
-                    
-                    -- 2. Build the new lists
-                    AddOptionsToList(value.List)
-                    
-                    -- FIX: Force the UI to recalculate canvas scaling options instantly
-                    -- This ensures your custom layout rendering registers the layout recalculations
-                    DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownOptionContainerLayout.AbsoluteContentSize.Y + 15)
-                    
-                    -- 3. Cycle the state visual tracking engine 
-                    if DropDownEnabled then
-                        makeelements(false, DropdownHolder)
-                    else
-                        makeelements(true, DropdownHolder)
-                    end
-                else
-                    SelectValue(value)
-                    CloseDropdownVisuals()
+                    opt.TextColor3 = Color3.fromRGB(255, 255, 255)
                 end
             end
         end
+
+        if isMulti then
+            pcall(callback, selectedItems)
+        else
+            pcall(callback, v)
+        end
+    end
+
+    local function AddOptionsToList(currentList)
+        for i, v in pairs(currentList) do  
+            local Option = Instance.new("TextButton")
+            local OptionCorner = Instance.new("UICorner")
+
+            Option.Name = "Option"
+            Option.Parent = DropdownOptionContainer
+            Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+            Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
+            Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
+            Option.Size = UDim2.new(0, 283, 0, 22)
+            Option.AutoButtonColor = false
+            Option.Font = Enum.Font.GothamSemibold
+            Option.Text = v
+            Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Option.TextSize = 10.000
+            
+            OptionCorner.CornerRadius = UDim.new(0, 6)
+            OptionCorner.Name = "OptionCorner"
+            OptionCorner.Parent = Option
+
+            Option.MouseEnter:Connect(function()
+                Option.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+            end)
+            
+            Option.MouseLeave:Connect(function()
+                Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+            end)
+
+            Option.MouseButton1Down:Connect(function()
+                SelectValue(v)
+                if not isMulti then
+                    CloseDropdownVisuals()
+                end
+            end)
+        end
+    end
+
+    AddOptionsToList(list)
+
+    ElementRegistry[dropdownname] = function(value)
+        if typeof(value) == "table" and value.Type == "RefreshDropdown" then
+            for _, child in pairs(DropdownOptionContainer:GetChildren()) do
+                if child:IsA("TextButton") then child:Destroy() end
+            end
+            AddOptionsToList(value.List)
+            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownOptionContainerLayout.AbsoluteContentSize.Y + 15)
+            
+            if DropDownEnabled then
+                makeelements(false, DropdownHolder)
+            else
+                makeelements(true, DropdownHolder)
+            end
+        else
+            if isMulti and typeof(value) == "table" then
+                selectedItems = value
+                LibraryConfigs[dropdownname] = selectedItems
+                for _, opt in pairs(DropdownOptionContainer:GetChildren()) do
+                    if opt:IsA("TextButton") then
+                        opt.TextColor3 = table.find(selectedItems, opt.Text) and Color3.fromRGB(137, 246, 255) or Color3.fromRGB(255, 255, 255)
+                    end
+                end
+                pcall(callback, selectedItems)
+            else
+                SelectValue(value)
+                CloseDropdownVisuals()
+            end
+        end
+    end
+end
 
         return PageElements
     end
