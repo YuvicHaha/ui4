@@ -694,12 +694,14 @@ function Library:CreateWindow(windowname,windowinfo)
                 bindMode = "Toggle"
                 ModeButton.Text = "Toggle"
                 closeModeDropdown()
+                ToggleHolder.ZIndex = 1
             end)
 
             ModeHoldOpt.MouseButton1Down:Connect(function()
                 bindMode = "Hold"
                 ModeButton.Text = "Hold"
                 closeModeDropdown()
+                ToggleHolder.ZIndex = 1
             end)
 
             if hasColorPicker then
