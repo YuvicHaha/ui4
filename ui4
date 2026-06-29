@@ -1329,11 +1329,8 @@ end
                 end
             end)	
 
-            -- Helper internal function to process selection and update configuration tracking maps
-            local function SelectValue(v, isConfigLoad)
+            local function SelectValue(v)
                 LibraryConfigs[dropdownname] = v
-                
-                -- Visually change color of selected option button inside the UI panel layout structure
                 for _, opt in pairs(DropdownOptionContainer:GetChildren()) do
                     if opt:IsA("TextButton") then
                         if opt.Text == v then
@@ -1343,54 +1340,73 @@ end
                         end
                     end
                 end
-                
                 pcall(callback, v)
             end
 
-            for i,v in pairs(list) do  
-                local Option = Instance.new("TextButton")
-                local OptionCorner = Instance.new("UICorner")
+            -- FIX: Isolated button creation into a standalone function so we can refresh dynamically
+            local function AddOptionsToList(currentList)
+                for i,v in pairs(currentList) do  
+                    local Option = Instance.new("TextButton")
+                    local OptionCorner = Instance.new("UICorner")
 
-                Option.Name = "Option"
-                Option.Parent = DropdownOptionContainer
-                Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-                Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
-                Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
-                Option.Size = UDim2.new(0, 283, 0, 22)
-                Option.AutoButtonColor = false
-                Option.Font = Enum.Font.GothamSemibold
-                Option.Text = v
-                Option.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Option.TextSize = 10.000
-                
-                OptionCorner.CornerRadius = UDim.new(0, 6)
-                OptionCorner.Name = "OptionCorner"
-                OptionCorner.Parent = Option
-
-                Option.MouseEnter:Connect(function()
-                    Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
-                end)
-                
-                Option.MouseLeave:Connect(function()
-                    Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
-                end)
-
-                Option.MouseButton1Down:Connect(function()
-                    DropDownEnabled = false
-                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
-                    task.wait(0.2)
-                    DropdownOptionContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                    Option.Name = "Option"
+                    Option.Parent = DropdownOptionContainer
+                    Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                    Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
+                    Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
+                    Option.Size = UDim2.new(0, 283, 0, 22)
+                    Option.AutoButtonColor = false
+                    Option.Font = Enum.Font.GothamSemibold
+                    Option.Text = v
+                    Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    Option.TextSize = 10.000
                     
-                    SelectValue(v, false) -- FIX: Saves state and fires callback tracking mechanisms
+                    OptionCorner.CornerRadius = UDim.new(0, 6)
+                    OptionCorner.Name = "OptionCorner"
+                    OptionCorner.Parent = Option
+
+                    Option.MouseEnter:Connect(function()
+                        Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
+                    end)
                     
-                    task.wait(0.3)
-                    makeelements(true, DropdownHolder)
-                    DropdownContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) 
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out".
-                end) 
+                    Option.MouseLeave:Connect(function()
+                        Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
+                    end)
+
+                    Option.MouseButton1Down:Connect(function()
+                        DropDownEnabled = false
+                        DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                        DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                        task.wait(0.2)
+                        DropdownOptionContainer.Visible = false
+                        DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                        
+                        SelectValue(v)
+                        
+                        task.wait(0.3)
+                        makeelements(true, DropdownHolder)
+                        DropdownContainer.Visible = false
+                        DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) 
+                        DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) 
+                    end)
+                end
+            end
+
+            -- Build baseline layout options
+            AddOptionsToList(list)
+
+            -- FIX: The registry entry can now parse standard loading value assignments OR clean layout reloads
+            ElementRegistry[dropdownname] = function(value)
+                if typeof(value) == "table" and value.Type == "RefreshDropdown" then
+                    -- Wipe prior layout models
+                    for _, child in pairs(DropdownOptionContainer:GetChildren()) do
+                        if child:IsA("TextButton") then child:Destroy() end
+                    end
+                    -- Build fresh file strings
+                    AddOptionsToList(value.List)
+                else
+                    SelectValue(value)
+                end
             end
         end
 
