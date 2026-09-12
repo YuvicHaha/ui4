@@ -1210,39 +1210,17 @@ end
 
         --// LABEL
         function Elements:addLabel(name,info)
+            local o=type(name)=="table" and name or nil
+            if o then name=o.Text or "" info=o.Info or o.Description or "" end
             local H=Instance.new("Frame")
             local C=Instance.new("UICorner")
             local T=Instance.new("TextLabel")
             local I=Instance.new("TextLabel")
-
-            H.Parent=Home
-            H.BackgroundColor3=Color3.fromRGB(17,17,17)
-            H.BorderSizePixel=0
-            H.Size=UDim2.new(0,304,0,30)
-
-            C.CornerRadius=UDim.new(0,5)
-            C.Parent=H
-
-            T.Parent=H
-            T.BackgroundTransparency=1
-            T.Size=UDim2.new(1,0,0,17)
-            T.Font=Enum.Font.GothamSemibold
-            T.Text=name or ""
-            T.TextColor3=Color3.new(1,1,1)
-            T.TextSize=11
-
-            I.Parent=H
-            I.BackgroundTransparency=1
-            I.Position=UDim2.new(0,0,.55,0)
-            I.Size=UDim2.new(1,0,0,11)
-            I.Font=Enum.Font.GothamSemibold
-            I.Text=info or ""
-            I.TextColor3=Color3.new(1,1,1)
-            I.TextTransparency=.3
-            I.TextSize=9
-
+            H.Parent=Home H.BackgroundColor3=Color3.fromRGB(17,17,17) H.BorderSizePixel=0 H.Size=UDim2.new(0,304,0,30)
+            C.CornerRadius=UDim.new(0,5) C.Parent=H
+            T.Parent=H T.BackgroundTransparency=1 T.Size=UDim2.new(1,0,0,17) T.Font=Enum.Font.GothamSemibold T.Text=name or "" T.TextColor3=Color3.new(1,1,1) T.TextSize=11
+            I.Parent=H I.BackgroundTransparency=1 I.Position=UDim2.new(0,0,.55,0) I.Size=UDim2.new(1,0,0,11) I.Font=Enum.Font.GothamSemibold I.Text=info or "" I.TextColor3=Color3.new(1,1,1) I.TextTransparency=.3 I.TextSize=9
             RegisterElement(H,name,"Label")
-
             return H,T,I
         end
 
@@ -2519,302 +2497,130 @@ end
         end
 
         --// TEXTBOX
-        function Elements:addTextBox(
-            name,
-            default,
-            callback
-        )
-            local H=Instance.new("Frame")
-            local C=Instance.new("UICorner")
-            local T=Instance.new("TextLabel")
-            local B=Instance.new("TextBox")
-            local BC=Instance.new("UICorner")
-
-            H.Parent=Home
-            H.BackgroundColor3=Color3.fromRGB(17,17,17)
-            H.BorderSizePixel=0
-            H.Size=UDim2.new(0,304,0,30)
-
-            C.CornerRadius=UDim.new(0,5)
-            C.Parent=H
-
-            T.Parent=H
-            T.BackgroundTransparency=1
-            T.Position=UDim2.new(.024,0,0,3)
-            T.Size=UDim2.new(0,210,0,24)
-            T.Font=Enum.Font.GothamSemibold
-            T.Text=name or ""
-            T.TextColor3=Color3.new(1,1,1)
-            T.TextSize=11
-            T.TextXAlignment=Enum.TextXAlignment.Left
-
-            B.Parent=H
-            B.BackgroundColor3=Color3.fromRGB(5,5,5)
-            B.Position=UDim2.new(.735,0,0,5)
-            B.Size=UDim2.new(0,75,0,20)
-            B.Font=Enum.Font.GothamSemibold
-            B.Text=default or ""
-            B.TextColor3=Color3.new(1,1,1)
-            B.TextSize=9
-            B.ClearTextOnFocus=false
-
-            BC.CornerRadius=UDim.new(0,5)
-            BC.Parent=B
-
-            B.FocusLost:Connect(function()
-                pcall(callback,B.Text)
-            end)
-
+        function Elements:addTextBox(name,default,callback)
+            local o=type(default)=="table" and default or nil
+            if o then name=o.Text or name default=o.Default or "" callback=o.Callback end
+            callback=callback or function() end
+            local H=Instance.new("Frame") local C=Instance.new("UICorner") local T=Instance.new("TextLabel") local B=Instance.new("TextBox") local BC=Instance.new("UICorner")
+            H.Parent=Home H.BackgroundColor3=Color3.fromRGB(17,17,17) H.BorderSizePixel=0 H.Size=UDim2.new(0,304,0,30)
+            C.CornerRadius=UDim.new(0,5) C.Parent=H
+            T.Parent=H T.BackgroundTransparency=1 T.Position=UDim2.new(.024,0,0,3) T.Size=UDim2.new(0,210,0,24) T.Font=Enum.Font.GothamSemibold T.Text=name or "" T.TextColor3=Color3.new(1,1,1) T.TextSize=11 T.TextXAlignment=Enum.TextXAlignment.Left
+            B.Parent=H B.BackgroundColor3=Color3.fromRGB(5,5,5) B.Position=UDim2.new(.735,0,0,5) B.Size=UDim2.new(0,75,0,20) B.Font=Enum.Font.GothamSemibold B.Text=tostring(default or "") B.TextColor3=Color3.new(1,1,1) B.TextSize=9 B.ClearTextOnFocus=false B.PlaceholderText=(o and o.Placeholder) or ""
+            BC.CornerRadius=UDim.new(0,5) BC.Parent=B
+            B.FocusLost:Connect(function() pcall(callback,B.Text) end)
             RegisterElement(H,name,"TextBox")
-
-            RegisterConfig(
-                name,
-                "TextBox",
-                function()
-                    return B.Text
-                end,
-                function(v)
-                    B.Text=tostring(v or "")
-                    pcall(callback,B.Text)
-                end
-            )
-
+            RegisterConfig(name,"TextBox",function() return B.Text end,function(v) B.Text=tostring(v or "") pcall(callback,B.Text) end)
             return H,B
         end
 
         --// DROPDOWN
-        function Elements:addDropdown(
-            name,
-            list,
-            scrollsize,
-            callback
-        )
-            local H=Instance.new("Frame")
-            local C=Instance.new("UICorner")
-            local T=Instance.new("TextLabel")
-            local B=Instance.new("TextButton")
-            local Icon=Instance.new("ImageLabel")
-            local Panel=Instance.new("Frame")
-            local PC=Instance.new("UICorner")
-            local Scroll=Instance.new("ScrollingFrame")
-            local Layout=Instance.new("UIListLayout")
-
-            H.Parent=Home
-            H.BackgroundColor3=Color3.fromRGB(17,17,17)
-            H.BorderSizePixel=0
-            H.Size=UDim2.new(0,304,0,30)
-            H.ClipsDescendants=false
-
-            C.CornerRadius=UDim.new(0,5)
-            C.Parent=H
-
-            T.Parent=H
-            T.BackgroundTransparency=1
-            T.Position=UDim2.new(.024,0,0,2)
-            T.Size=UDim2.new(0,220,0,26)
-            T.Font=Enum.Font.GothamSemibold
-            T.Text=name or ""
-            T.TextColor3=Color3.new(1,1,1)
-            T.TextSize=11
-            T.TextXAlignment=Enum.TextXAlignment.Left
-
-            B.Parent=H
-            B.BackgroundTransparency=1
-            B.Size=UDim2.new(1,0,0,30)
-            B.Text=""
-            B.AutoButtonColor=false
-
-            Icon.Parent=B
-            Icon.BackgroundTransparency=1
-            Icon.Position=UDim2.new(.88,0,.18,0)
-            Icon.Size=UDim2.new(0,24,0,17)
-            Icon.Image="rbxassetid://3944690667"
-
-            Panel.Parent=H
-            Panel.BackgroundColor3=Color3.fromRGB(17,17,17)
-            Panel.Position=UDim2.new(0,0,0,34)
-            Panel.Size=UDim2.new(0,304,0,115)
-            Panel.BorderSizePixel=0
-            Panel.Visible=false
-            Panel.ZIndex=100
-            Panel.Active=true
-
-            PC.CornerRadius=UDim.new(0,6)
-            PC.Parent=Panel
-
-            Scroll.Parent=Panel
-            Scroll.BackgroundTransparency=1
-            Scroll.BorderSizePixel=0
-            Scroll.Position=UDim2.new(0,4,0,5)
-            Scroll.Size=UDim2.new(1,-8,1,-10)
-            Scroll.ScrollBarThickness=3
-            Scroll.ScrollBarImageColor3=Color3.fromRGB(70,70,70)
-            Scroll.ZIndex=101
-
-            Layout.Parent=Scroll
-            Layout.HorizontalAlignment=Enum.HorizontalAlignment.Center
-            Layout.SortOrder=Enum.SortOrder.LayoutOrder
-            Layout.Padding=UDim.new(0,5)
-
-            local open=false
-            local selected=nil
-            local values={}
-
-            local function UpdateCanvasDropdown()
-                Scroll.CanvasSize=UDim2.new(
-                    0,
-                    0,
-                    0,
-                    Layout.AbsoluteContentSize.Y+8
-                )
+        function Elements:addDropdown(name,list,scrollsize,callback)
+            local o=type(list)=="table" and (list.Values~=nil or list.Text~=nil or list.Callback~=nil or list.Default~=nil or list.MultiSelect~=nil) and list or nil
+            if o then
+                name=o.Text or name list=o.Values or {} callback=o.Callback scrollsize=o.ScrollSize
             end
-
-            local function Close()
-                open=false
-                Panel.Visible=false
-                H.Size=UDim2.new(0,304,0,30)
-                Icon.ImageColor3=Color3.new(1,1,1)
-                task.defer(UpdateCanvas)
+            list=list or {} callback=callback or function() end
+            local multi=o and o.MultiSelect==true or false
+            local H=Instance.new("Frame") local C=Instance.new("UICorner") local T=Instance.new("TextLabel") local B=Instance.new("TextButton") local Icon=Instance.new("ImageLabel") local Panel=Instance.new("Frame") local PC=Instance.new("UICorner") local Scroll=Instance.new("ScrollingFrame") local Layout=Instance.new("UIListLayout")
+            H.Parent=Home H.BackgroundColor3=Color3.fromRGB(17,17,17) H.BorderSizePixel=0 H.Size=UDim2.new(0,304,0,30) H.ClipsDescendants=false
+            C.CornerRadius=UDim.new(0,5) C.Parent=H
+            T.Parent=H T.BackgroundTransparency=1 T.Position=UDim2.new(.024,0,0,2) T.Size=UDim2.new(0,220,0,26) T.Font=Enum.Font.GothamSemibold T.Text=name or "" T.TextColor3=Color3.new(1,1,1) T.TextSize=11 T.TextXAlignment=Enum.TextXAlignment.Left
+            B.Parent=H B.BackgroundTransparency=1 B.Size=UDim2.new(1,0,0,30) B.Text="" B.AutoButtonColor=false
+            Icon.Parent=B Icon.BackgroundTransparency=1 Icon.Position=UDim2.new(.88,0,.18,0) Icon.Size=UDim2.new(0,24,0,17) Icon.Image="rbxassetid://3944690667"
+            Panel.Parent=H Panel.BackgroundColor3=Color3.fromRGB(17,17,17) Panel.Position=UDim2.new(0,0,0,34) Panel.Size=UDim2.new(0,304,0,115) Panel.BorderSizePixel=0 Panel.Visible=false Panel.ZIndex=100 Panel.Active=true
+            PC.CornerRadius=UDim.new(0,6) PC.Parent=Panel
+            Scroll.Parent=Panel Scroll.BackgroundTransparency=1 Scroll.BorderSizePixel=0 Scroll.Position=UDim2.new(0,4,0,5) Scroll.Size=UDim2.new(1,-8,1,-10) Scroll.ScrollBarThickness=3 Scroll.ScrollBarImageColor3=Color3.fromRGB(70,70,70) Scroll.ZIndex=101
+            Layout.Parent=Scroll Layout.HorizontalAlignment=Enum.HorizontalAlignment.Center Layout.SortOrder=Enum.SortOrder.LayoutOrder Layout.Padding=UDim.new(0,5)
+            local open=false local selected=nil local values={} local selections={}
+            local function canvas() Scroll.CanvasSize=UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y+8) end
+            local function close() open=false Panel.Visible=false H.Size=UDim2.new(0,304,0,30) Icon.ImageColor3=Color3.new(1,1,1) task.defer(UpdateCanvas) end
+            local function visual(btn,v)
+                local yes=multi and selections[v] or selected==v
+                btn.BackgroundColor3=yes and Color3.fromRGB(137,246,255) or Color3.fromRGB(15,15,15)
+                btn.TextColor3=yes and Color3.fromRGB(10,10,10) or Color3.new(1,1,1)
             end
-
-            B.MouseButton1Click:Connect(function()
-                open=not open
-                Panel.Visible=open
-
-                H.Size=UDim2.new(
-                    0,
-                    304,
-                    0,
-                    open and 149 or 30
-                )
-
-                Icon.ImageColor3=
-                    open
-                    and Color3.fromRGB(137,246,255)
-                    or Color3.new(1,1,1)
-
-                task.defer(UpdateCanvas)
-            end)
-
-            local function Build(valuesList)
-                values={}
-
-                for _,child in ipairs(Scroll:GetChildren()) do
-                    if child:IsA("TextButton") then
-                        child:Destroy()
-                    end
+            local function get()
+                if not multi then return selected end
+                local r={} for _,v in ipairs(values) do if selections[v] then r[v]=true end end return r
+            end
+            local function set(v,fire)
+                if multi then
+                    selections={}
+                    if type(v)=="table" then for k,x in pairs(v) do if x==true then selections[k]=true end end elseif v~=nil then selections[v]=true end
+                    local names={} for _,x in ipairs(values) do if selections[x] then table.insert(names,tostring(x)) end end
+                    T.Text=#names>0 and table.concat(names,", ") or tostring(name)
+                    for _,ch in ipairs(Scroll:GetChildren()) do if ch:IsA("TextButton") then for _,x in ipairs(values) do if ch.Text==tostring(x) then visual(ch,x) break end end end end
+                    if fire then pcall(callback,selections) end
+                else
+                    for _,x in ipairs(values) do if tostring(x)==tostring(v) then selected=x T.Text=tostring(x) for _,ch in ipairs(Scroll:GetChildren()) do if ch:IsA("TextButton") then visual(ch,x) end end if fire then pcall(callback,x) end return end end
                 end
-
+            end
+            B.MouseButton1Click:Connect(function() open=not open Panel.Visible=open H.Size=UDim2.new(0,304,0,open and 149 or 30) Icon.ImageColor3=open and Color3.fromRGB(137,246,255) or Color3.new(1,1,1) task.defer(UpdateCanvas) end)
+            local function build(valuesList)
+                values={} for _,ch in ipairs(Scroll:GetChildren()) do if ch:IsA("TextButton") then ch:Destroy() end end
                 for _,v in ipairs(valuesList or {}) do
-                    table.insert(values,v)
-
-                    local O=Instance.new("TextButton")
-                    local OC=Instance.new("UICorner")
-
-                    O.Parent=Scroll
-                    O.BackgroundColor3=Color3.fromRGB(15,15,15)
-                    O.BorderSizePixel=0
-                    O.Size=UDim2.new(1,0,0,24)
-                    O.AutoButtonColor=false
-                    O.Font=Enum.Font.GothamSemibold
-                    O.Text=tostring(v)
-                    O.TextColor3=Color3.new(1,1,1)
-                    O.TextSize=10
-                    O.ZIndex=102
-
-                    OC.CornerRadius=UDim.new(0,6)
-                    OC.Parent=O
-
-                    O.MouseEnter:Connect(function()
-                        O.BackgroundColor3=
-                            Color3.fromRGB(10,10,10)
-                    end)
-
-                    O.MouseLeave:Connect(function()
-                        O.BackgroundColor3=
-                            Color3.fromRGB(15,15,15)
-                    end)
-
+                    table.insert(values,v) local O=Instance.new("TextButton") local OC=Instance.new("UICorner")
+                    O.Parent=Scroll O.BackgroundColor3=Color3.fromRGB(15,15,15) O.BorderSizePixel=0 O.Size=UDim2.new(1,0,0,24) O.AutoButtonColor=false O.Font=Enum.Font.GothamSemibold O.Text=tostring(v) O.TextColor3=Color3.new(1,1,1) O.TextSize=10 O.ZIndex=102
+                    OC.CornerRadius=UDim.new(0,6) OC.Parent=O visual(O,v)
+                    O.MouseEnter:Connect(function() if not ((multi and selections[v]) or selected==v) then O.BackgroundColor3=Color3.fromRGB(10,10,10) end end)
+                    O.MouseLeave:Connect(function() visual(O,v) end)
                     O.MouseButton1Click:Connect(function()
-                        selected=v
-                        T.Text=tostring(v)
-                        Close()
-                        pcall(callback,v)
+                        if multi then selections[v]=not selections[v] T.Text=(function() local n={} for _,x in ipairs(values) do if selections[x] then table.insert(n,tostring(x)) end end return #n>0 and table.concat(n,", ") or tostring(name) end)() visual(O,v) pcall(callback,selections)
+                        else selected=v T.Text=tostring(v) visual(O,v) close() pcall(callback,v) end
                     end)
-                end
-
-                UpdateCanvasDropdown()
+                end canvas()
             end
-
-            Build(list or {})
-
-            Layout:GetPropertyChangedSignal(
-                "AbsoluteContentSize"
-            ):Connect(UpdateCanvasDropdown)
-
+            build(list)
+            Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(canvas)
+            local def=o and o.Default or nil
+            if def~=nil then set(def,false) elseif scrollsize and tonumber(scrollsize) and values[tonumber(scrollsize)] then set(values[tonumber(scrollsize)],false) end
             RegisterElement(H,name,"Dropdown")
+            RegisterConfig(name,"Dropdown",function() return get() end,function(v) if v~=nil then set(v,true) end end)
+            return {Object=H,Refresh=function(newList) build(newList or {}) end,Get=function() return get() end,Set=function(v) set(v,true) end}
+        end
 
-            RegisterConfig(
-                name,
-                "Dropdown",
-                function()
-                    return selected
-                end,
-                function(v)
-                    if v==nil then
-                        return
-                    end
+        function Elements:addKeybind(name,default,callback)
+            local o=type(default)=="table" and default or nil
+            if o then name=o.Text or name default=o.Default callback=o.Callback end
+            callback=callback or function() end
+            local H=Instance.new("Frame") local C=Instance.new("UICorner") local T=Instance.new("TextLabel") local B=Instance.new("TextButton")
+            H.Parent=Home H.BackgroundColor3=Color3.fromRGB(17,17,17) H.BorderSizePixel=0 H.Size=UDim2.new(0,304,0,30) C.CornerRadius=UDim.new(0,5) C.Parent=H
+            T.Parent=H T.BackgroundTransparency=1 T.Position=UDim2.new(.024,0,0,3) T.Size=UDim2.new(0,200,0,24) T.Font=Enum.Font.GothamSemibold T.Text=name or "" T.TextColor3=Color3.new(1,1,1) T.TextSize=11 T.TextXAlignment=Enum.TextXAlignment.Left
+            B.Parent=H B.BackgroundColor3=Color3.fromRGB(5,5,5) B.Position=UDim2.new(.70,0,0,5) B.Size=UDim2.new(0,85,0,20) B.Font=Enum.Font.GothamSemibold B.Text=default and tostring(default.Name or default) or "None" B.TextColor3=Color3.new(1,1,1) B.TextSize=9
+            local value=default local listening=false
+            B.MouseButton1Click:Connect(function() listening=true B.Text="Press key..." end)
+            UIS.InputBegan:Connect(function(i,g) if listening and not g then if i.UserInputType==Enum.UserInputType.Keyboard then value=i.KeyCode listening=false B.Text=i.KeyCode.Name pcall(callback,value) end end end)
+            RegisterElement(H,name,"Keybind") RegisterConfig(name,"Keybind",function() return value and value.Name end,function(v) if type(v)=="string" then local ok,k=pcall(function() return Enum.KeyCode[v] end) if ok and k then value=k B.Text=k.Name pcall(callback,k) end elseif typeof(v)=="EnumItem" then value=v B.Text=v.Name pcall(callback,v) end end)
+            return {Object=H,Get=function() return value end,Set=function(v) value=v B.Text=v and v.Name or "None" pcall(callback,v) end}
+        end
 
-                    for _,value in ipairs(values) do
-                        if tostring(value)==tostring(v) then
-                            selected=value
-                            T.Text=tostring(value)
-                            pcall(callback,value)
-                            return
-                        end
-                    end
-                end
-            )
-
-            return {
-                Object=H,
-
-                Refresh=function(newList)
-                    Build(newList or {})
-                end,
-
-                Get=function()
-                    return selected
-                end,
-
-                Set=function(v)
-                    for _,value in ipairs(values) do
-                        if tostring(value)==tostring(v) then
-                            selected=value
-                            T.Text=tostring(value)
-                            pcall(callback,value)
-                            return
-                        end
-                    end
-                end
-            }
+        function Elements:addColorPicker(name,default,callback)
+            local o=type(default)=="table" and default or nil
+            if o then name=o.Text or name default=o.Default callback=o.Callback end
+            callback=callback or function() end default=typeof(default)=="Color3" and default or Color3.new(1,1,1)
+            local H=Instance.new("Frame") local C=Instance.new("UICorner") local T=Instance.new("TextLabel") local B=Instance.new("TextButton") local BC=Instance.new("UICorner")
+            H.Parent=Home H.BackgroundColor3=Color3.fromRGB(17,17,17) H.BorderSizePixel=0 H.Size=UDim2.new(0,304,0,30) C.CornerRadius=UDim.new(0,5) C.Parent=H
+            T.Parent=H T.BackgroundTransparency=1 T.Position=UDim2.new(.024,0,0,3) T.Size=UDim2.new(0,230,0,24) T.Font=Enum.Font.GothamSemibold T.Text=name or "" T.TextColor3=Color3.new(1,1,1) T.TextSize=11 T.TextXAlignment=Enum.TextXAlignment.Left
+            B.Parent=H B.BackgroundColor3=default B.Position=UDim2.new(.82,0,0,5) B.Size=UDim2.new(0,45,0,20) B.Text="" B.AutoButtonColor=false BC.CornerRadius=UDim.new(0,5) BC.Parent=B
+            local value=default B.MouseButton1Click:Connect(function() pcall(callback,value) end)
+            RegisterElement(H,name,"ColorPicker") RegisterConfig(name,"ColorPicker",function() return {R=value.R,G=value.G,B=value.B} end,function(v) if type(v)=="table" and v.R and v.G and v.B then value=Color3.new(v.R,v.G,v.B) B.BackgroundColor3=value pcall(callback,value) end end)
+            return {Object=H,Get=function() return value end,Set=function(v) if typeof(v)=="Color3" then value=v B.BackgroundColor3=v pcall(callback,v) end end}
         end
 
         task.defer(UpdateCanvas)
 
         UpdateWindowLayout()
 
-                    --// LINORIA-STYLE API ALIASES
-            Elements.AddLabel=Elements.addLabel
-            Elements.AddButton=Elements.addButton
-            Elements.AddToggle=Elements.addToggle
-            Elements.AddSlider=Elements.addSlider
-            Elements.AddInput=Elements.addTextBox
-            Elements.AddDropdown=Elements.addDropdown
-            Elements.AddKeybind=Elements.addKeybind
-            Elements.AddColorPicker=Elements.addColorPicker
+        Elements.AddLabel=Elements.addLabel
+        Elements.AddButton=Elements.addButton
+        Elements.AddToggle=Elements.addToggle
+        Elements.AddSlider=Elements.addSlider
+        Elements.AddInput=Elements.addTextBox
+        Elements.AddDropdown=Elements.addDropdown
+        Elements.AddKeybind=Elements.addKeybind
+        Elements.AddColorPicker=Elements.addColorPicker
 
-return Elements
+        return Elements
     end
 
     --// CONFIG PAGE
