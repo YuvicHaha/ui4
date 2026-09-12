@@ -1732,11 +1732,7 @@ end
                 mainPress=true
 
                 if keybindMode then
-                    if toggleMode=="Hold" then
-                        if armed then SetActive(true,true) end
-                    else
-                        SetArmed(not armed,true)
-                    end
+                    SetArmed(not armed,true)
                 elseif toggleMode=="Hold" then
                     SetActive(true,true)
                 end
@@ -1752,9 +1748,7 @@ end
                 mainPress=false
 
                 if keybindMode then
-                    if toggleMode=="Hold" and armed then
-                        SetActive(false,true)
-                    end
+                    -- Master toggle only arms/disarms; the keybind controls the feature.
                 elseif toggleMode=="Hold" then
                     SetActive(false,true)
                 else
