@@ -1781,9 +1781,9 @@ end
                 CBC.CornerRadius=UDim.new(0,4)
                 CBC.Parent=CB
 
-                Panel.Parent=H
+                Panel.Parent=Gui
                 Panel.BackgroundColor3=Color3.fromRGB(25,25,25)
-                Panel.Position=UDim2.new(0,4,0,34)
+                Panel.Position=UDim2.new(0,0,0,0)
                 Panel.Size=UDim2.new(0,296,0,115)
                 Panel.Visible=false
                 Panel.ZIndex=60
@@ -1822,23 +1822,29 @@ end
                     task.defer(UpdateCanvas)
                 end
 
+                local function PositionPicker()
+                    if not CB.Parent then return end
+                    local p=CB.AbsolutePosition
+                    local y=p.Y+CB.AbsoluteSize.Y+4
+                    local x=p.X-120
+                    local vp=Gui.AbsoluteSize
+                    x=math.clamp(x,4,math.max(4,vp.X-300))
+                    y=math.clamp(y,4,math.max(4,vp.Y-120))
+                    Panel.Position=UDim2.fromOffset(x,y)
+                end
+
                 CB.MouseButton1Click:Connect(function()
                     open=not open
-                    Panel.Visible=open
-
-                    H.Size=UDim2.new(
-                        0,
-                        304,
-                        0,
-                        open and 149 or 30
-                    )
-
-                    local colorOpen=open
-                    CB.BackgroundColor3=color
-
-                    if colorOpen then
+                    if open then
+                        PositionPicker()
+                        Panel.Visible=true
                         Circle.BackgroundColor3=color
+                    else
+                        Panel.Visible=false
                     end
+                    CB.BackgroundColor3=color
+                    H.Size=UDim2.new(0,304,0,30)
+                    task.defer(UpdateCanvas)
                 end)
 
                 local colorDrag=false
@@ -2609,14 +2615,47 @@ end
         function Elements:addColorPicker(name,default,callback)
             local o=type(default)=="table" and default or nil
             if o then name=o.Text or name default=o.Default callback=o.Callback end
-            callback=callback or function() end default=typeof(default)=="Color3" and default or Color3.new(1,1,1)
+            callback=callback or function() end
+            default=typeof(default)=="Color3" and default or Color3.new(1,1,1)
             local H=Instance.new("Frame") local C=Instance.new("UICorner") local T=Instance.new("TextLabel") local B=Instance.new("TextButton") local BC=Instance.new("UICorner")
-            H.Parent=Home H.BackgroundColor3=Color3.fromRGB(17,17,17) H.BorderSizePixel=0 H.Size=UDim2.new(0,304,0,30) C.CornerRadius=UDim.new(0,5) C.Parent=H
+            H.Parent=Home H.BackgroundColor3=Color3.fromRGB(17,17,17) H.BorderSizePixel=0 H.Size=UDim2.new(0,304,0,30) H.ClipsDescendants=false C.CornerRadius=UDim.new(0,5) C.Parent=H
             T.Parent=H T.BackgroundTransparency=1 T.Position=UDim2.new(.024,0,0,3) T.Size=UDim2.new(0,230,0,24) T.Font=Enum.Font.GothamSemibold T.Text=name or "" T.TextColor3=Color3.new(1,1,1) T.TextSize=11 T.TextXAlignment=Enum.TextXAlignment.Left
-            B.Parent=H B.BackgroundColor3=default B.Position=UDim2.new(.82,0,0,5) B.Size=UDim2.new(0,45,0,20) B.Text="" B.AutoButtonColor=false BC.CornerRadius=UDim.new(0,5) BC.Parent=B
-            local value=default B.MouseButton1Click:Connect(function() pcall(callback,value) end)
-            RegisterElement(H,name,"ColorPicker") RegisterConfig(name,"ColorPicker",function() return {R=value.R,G=value.G,B=value.B} end,function(v) if type(v)=="table" and v.R and v.G and v.B then value=Color3.new(v.R,v.G,v.B) B.BackgroundColor3=value pcall(callback,value) end end)
-            return {Object=H,Get=function() return value end,Set=function(v) if typeof(v)=="Color3" then value=v B.BackgroundColor3=v pcall(callback,v) end end}
+            B.Parent=H B.BackgroundColor3=default B.Position=UDim2.new(.82,0,0,5) B.Size=UDim2.new(0,45,0,20) B.Text="" B.AutoButtonColor=false B.ZIndex=50 BC.CornerRadius=UDim.new(0,5) BC.Parent=B
+            local Panel=Instance.new("Frame") local PC=Instance.new("UICorner") local Canvas=Instance.new("ImageButton") local Circle=Instance.new("Frame") local CC=Instance.new("UICorner")
+            Panel.Parent=Gui Panel.BackgroundColor3=Color3.fromRGB(25,25,25) Panel.Size=UDim2.new(0,296,0,115) Panel.Visible=false Panel.BorderSizePixel=0 Panel.Active=true Panel.ZIndex=300
+            PC.CornerRadius=UDim.new(0,6) PC.Parent=Panel
+            Canvas.Parent=Panel Canvas.BackgroundTransparency=1 Canvas.Position=UDim2.new(0,8,0,8) Canvas.Size=UDim2.new(1,-16,1,-16) Canvas.Image="rbxassetid://143332548" Canvas.ZIndex=301 Canvas.AutoButtonColor=false
+            Circle.Parent=Canvas Circle.AnchorPoint=Vector2.new(.5,.5) Circle.BackgroundColor3=default Circle.BorderColor3=Color3.new(0,0,0) Circle.BorderSizePixel=2 Circle.Size=UDim2.new(0,10,0,10) Circle.ZIndex=302 Circle.Position=UDim2.new(.5,0,.5,0)
+            CC.CornerRadius=UDim.new(1,0) CC.Parent=Circle
+            local value=default local open=false local dragging=false
+            local function positionPicker()
+                local p=B.AbsolutePosition local x=p.X-120 local y=p.Y+B.AbsoluteSize.Y+4 local vp=Gui.AbsoluteSize
+                Panel.Position=UDim2.fromOffset(math.clamp(x,4,math.max(4,vp.X-300)),math.clamp(y,4,math.max(4,vp.Y-120)))
+            end
+            local function setColor(i)
+                local s=Canvas.AbsoluteSize local p=Canvas.AbsolutePosition
+                if s.X<=0 or s.Y<=0 then return end
+                local x=math.clamp((i.Position.X-p.X)/s.X,0,1) local y=math.clamp((i.Position.Y-p.Y)/s.Y,0,1)
+                value=Color3.fromHSV(x,1-y,1) Circle.Position=UDim2.new(x,0,y,0) Circle.BackgroundColor3=value B.BackgroundColor3=value pcall(callback,value)
+            end
+            B.MouseButton1Click:Connect(function()
+                open=not open
+                if open then positionPicker() Panel.Visible=true Circle.BackgroundColor3=value else Panel.Visible=false end
+            end)
+            Canvas.InputBegan:Connect(function(i)
+                if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dragging=true setColor(i) end
+            end)
+            UIS.InputChanged:Connect(function(i)
+                if dragging and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then setColor(i) end
+            end)
+            UIS.InputEnded:Connect(function(i)
+                if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dragging=false end
+            end)
+            RegisterElement(H,name,"ColorPicker")
+            RegisterConfig(name,"ColorPicker",function() return {R=value.R,G=value.G,B=value.B} end,function(v)
+                if type(v)=="table" and v.R and v.G and v.B then value=Color3.new(v.R,v.G,v.B) B.BackgroundColor3=value Circle.BackgroundColor3=value pcall(callback,value) end
+            end)
+            return {Object=H,Get=function() return value end,Set=function(v) if typeof(v)=="Color3" then value=v B.BackgroundColor3=v Circle.BackgroundColor3=v pcall(callback,v) end end}
         end
 
         task.defer(UpdateCanvas)
