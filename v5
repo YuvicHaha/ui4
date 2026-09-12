@@ -1755,7 +1755,12 @@ end
                 local CBC=Instance.new("UICorner")
                 local Panel=Instance.new("Frame")
                 local PC=Instance.new("UICorner")
-                local Canvas=Instance.new("ImageButton")
+                local Canvas=Instance.new("Frame")
+                local Hue=Instance.new("Frame")
+                local HueGrad=Instance.new("UIGradient")
+                local SVBase=Instance.new("Frame")
+                local WhiteGrad=Instance.new("UIGradient")
+                local BlackGrad=Instance.new("UIGradient")
                 local Circle=Instance.new("Frame")
                 local CC=Instance.new("UICorner")
 
@@ -1764,6 +1769,7 @@ end
                 CB.Position=UDim2.new(.69,0,0,5)
                 CB.Size=UDim2.new(0,20,0,20)
                 CB.Text=""
+                CB.AutoButtonColor=false
                 CB.ZIndex=50
 
                 CBC.CornerRadius=UDim.new(0,4)
@@ -1785,26 +1791,102 @@ end
                 Canvas.BackgroundTransparency=1
                 Canvas.Position=UDim2.new(0,8,0,8)
                 Canvas.Size=UDim2.new(1,-16,1,-16)
-                Canvas.Image="rbxassetid://143332548"
                 Canvas.ZIndex=61
-                Canvas.AutoButtonColor=false
 
-                Circle.Parent=Canvas
+                SVBase.Parent=Canvas
+                SVBase.BackgroundColor3=Color3.fromHSV(select(1,Color3.toHSV(color)),1,1)
+                SVBase.BorderSizePixel=0
+                SVBase.Size=UDim2.new(1,-28,1,0)
+                SVBase.ZIndex=61
+
+                WhiteGrad.Parent=SVBase
+                WhiteGrad.Color=ColorSequence.new(Color3.new(1,1,1))
+                WhiteGrad.Transparency=NumberSequence.new({
+                    NumberSequenceKeypoint.new(0,0),
+                    NumberSequenceKeypoint.new(1,1)
+                })
+                WhiteGrad.Rotation=0
+
+                BlackGrad.Parent=SVBase
+                BlackGrad.Color=ColorSequence.new(Color3.new(0,0,0))
+                BlackGrad.Transparency=NumberSequence.new({
+                    NumberSequenceKeypoint.new(0,1),
+                    NumberSequenceKeypoint.new(1,0)
+                })
+                BlackGrad.Rotation=90
+
+                Circle.Parent=SVBase
                 Circle.AnchorPoint=Vector2.new(.5,.5)
                 Circle.BackgroundColor3=color
-                Circle.BorderColor3=Color3.new(0,0,0)
+                Circle.BorderColor3=Color3.new(1,1,1)
                 Circle.BorderSizePixel=2
                 Circle.Size=UDim2.new(0,10,0,10)
-                Circle.ZIndex=62
-                Circle.Position=UDim2.new(.5,0,.5,0)
+                Circle.ZIndex=64
 
                 CC.CornerRadius=UDim.new(1,0)
                 CC.Parent=Circle
 
+                Hue.Parent=Canvas
+                Hue.BackgroundColor3=Color3.new(1,1,1)
+                Hue.BorderSizePixel=0
+                Hue.Position=UDim2.new(1,-20,0,0)
+                Hue.Size=UDim2.new(0,20,1,0)
+                Hue.ZIndex=62
+
+                HueGrad.Parent=Hue
+                HueGrad.Color=ColorSequence.new({
+                    ColorSequenceKeypoint.new(0,Color3.fromHSV(0,1,1)),
+                    ColorSequenceKeypoint.new(1/6,Color3.fromHSV(1/6,1,1)),
+                    ColorSequenceKeypoint.new(2/6,Color3.fromHSV(2/6,1,1)),
+                    ColorSequenceKeypoint.new(3/6,Color3.fromHSV(3/6,1,1)),
+                    ColorSequenceKeypoint.new(4/6,Color3.fromHSV(4/6,1,1)),
+                    ColorSequenceKeypoint.new(5/6,Color3.fromHSV(5/6,1,1)),
+                    ColorSequenceKeypoint.new(1,Color3.fromHSV(1,1,1))
+                })
+                HueGrad.Rotation=90
+
+                local h,s,v=Color3.toHSV(color)
                 local open=false
+                local colorDrag=false
+                local hueDrag=false
+
+                local function Refresh()
+                    SVBase.BackgroundColor3=Color3.fromHSV(h,1,1)
+                    Circle.Position=UDim2.new(s,0,1-v,0)
+                    CB.BackgroundColor3=color
+                    Circle.BackgroundColor3=color
+                    HueGrad.Offset=Vector2.new(0,math.clamp(h,0,1))
+                end
+
+                local function SetColor()
+                    color=Color3.fromHSV(h,s,v)
+                    Refresh()
+                    pcall(colorcb,color)
+                end
+
+                local function SetSV(i)
+                    local size=SVBase.AbsoluteSize
+                    local pos=SVBase.AbsolutePosition
+                    if size.X<=0 or size.Y<=0 then return end
+                    s=math.clamp((i.Position.X-pos.X)/size.X,0,1)
+                    v=1-math.clamp((i.Position.Y-pos.Y)/size.Y,0,1)
+                    SetColor()
+                end
+
+                local function SetHue(i)
+                    local size=Hue.AbsoluteSize
+                    local pos=Hue.AbsolutePosition
+                    if size.Y<=0 then return end
+                    h=math.clamp((i.Position.Y-pos.Y)/size.Y,0,1)
+                    SetColor()
+                end
+
+                Refresh()
 
                 closePicker=function()
                     open=false
+                    colorDrag=false
+                    hueDrag=false
                     Panel.Visible=false
                     H.Size=UDim2.new(0,304,0,30)
                     task.defer(UpdateCanvas)
@@ -1813,86 +1895,44 @@ end
                 CB.MouseButton1Click:Connect(function()
                     open=not open
                     Panel.Visible=open
+                    H.Size=UDim2.new(0,304,0,open and 149 or 30)
+                    if open then
+                        h,s,v=Color3.toHSV(color)
+                        Refresh()
+                    end
+                    task.defer(UpdateCanvas)
+                end)
 
-                    H.Size=UDim2.new(
-                        0,
-                        304,
-                        0,
-                        open and 149 or 30
-                    )
-
-                    local colorOpen=open
-                    CB.BackgroundColor3=color
-
-                    if colorOpen then
-                        Circle.BackgroundColor3=color
+                SVBase.InputBegan:Connect(function(i)
+                    if i.UserInputType==Enum.UserInputType.MouseButton1
+                    or i.UserInputType==Enum.UserInputType.Touch then
+                        colorDrag=true
+                        SetSV(i)
                     end
                 end)
 
-                local colorDrag=false
-
-                local function SetColor(i)
-                    local s=Canvas.AbsoluteSize
-                    local p=Canvas.AbsolutePosition
-
-                    if s.X<=0 or s.Y<=0 then
-                        return
-                    end
-
-                    local x=math.clamp(
-                        (i.Position.X-p.X)/s.X,
-                        0,
-                        1
-                    )
-
-                    local y=math.clamp(
-                        (i.Position.Y-p.Y)/s.Y,
-                        0,
-                        1
-                    )
-
-                    Circle.Position=UDim2.new(x,0,y,0)
-                    color=Color3.fromHSV(
-                        x,
-                        1-y,
-                        1
-                    )
-
-                    CB.BackgroundColor3=color
-                    Circle.BackgroundColor3=color
-
-                    pcall(colorcb,color)
-                end
-
-                Canvas.InputBegan:Connect(function(i)
-                    if i.UserInputType==
-                        Enum.UserInputType.MouseButton1
-                    or i.UserInputType==
-                        Enum.UserInputType.Touch then
-
-                        colorDrag=true
-                        SetColor(i)
+                Hue.InputBegan:Connect(function(i)
+                    if i.UserInputType==Enum.UserInputType.MouseButton1
+                    or i.UserInputType==Enum.UserInputType.Touch then
+                        hueDrag=true
+                        SetHue(i)
                     end
                 end)
 
                 UIS.InputChanged:Connect(function(i)
-                    if colorDrag
-                    and (
-                        i.UserInputType==
-                            Enum.UserInputType.MouseMovement
-                        or i.UserInputType==
-                            Enum.UserInputType.Touch
-                    ) then
-                        SetColor(i)
+                    if i.UserInputType~=Enum.UserInputType.MouseMovement
+                    and i.UserInputType~=Enum.UserInputType.Touch then
+                        return
                     end
+                    if colorDrag then SetSV(i) end
+                    if hueDrag then SetHue(i) end
                 end)
 
                 UIS.InputEnded:Connect(function(i)
-                    if i.UserInputType==
-                        Enum.UserInputType.MouseButton1
-                    or i.UserInputType==
-                        Enum.UserInputType.Touch then
+                    if i.UserInputType==Enum.UserInputType.MouseButton1
+                    or i.UserInputType==Enum.UserInputType.Touch then
                         colorDrag=false
+                        hueDrag=false
                     end
                 end)
 
@@ -1904,11 +1944,10 @@ end
                     end,
                     function(v)
                         local cc=TableToColor(v)
-
                         if cc then
                             color=cc
-                            CB.BackgroundColor3=color
-                            Circle.BackgroundColor3=color
+                            h,s,v=Color3.toHSV(color)
+                            Refresh()
                             pcall(colorcb,color)
                         end
                     end
